@@ -7,7 +7,8 @@ import { Platform } from 'react-native';
 
 const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
-
+const primary = "#f49b33";
+const secondary = "#2b2b2b";
 export const Colors = {
   light: {
     text: '#11181C',
@@ -25,6 +26,8 @@ export const Colors = {
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
   },
+  primary,
+  secondary
 };
 
 export const Fonts = Platform.select({
