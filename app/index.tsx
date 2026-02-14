@@ -11,7 +11,7 @@ import {
 import { Video, ResizeMode } from "expo-av";
 import { SafeAreaView } from "react-native-safe-area-context";
 const logo = require("../assets/images/dine-time.png");
-const Viedio = require("../assets/images/video.home.mp4");
+const btnimg = require("../assets/images/buttom.png");
 export default function index() {
   const router = useRouter();
   return (
@@ -59,22 +59,23 @@ export default function index() {
           </Text>
         </TouchableOpacity>
         {/* Attractive Video Section */}
-<View className="w-full  mt-8 items-center">
-
-  <View className="w-11/12 rounded-3xl overflow-hidden shadow-xl bg-black">
-
-    <Video
-      source={require("../assets/images/video.home.mp4")}
-      style={{ width: "100%", height: 220 }}
-      resizeMode={ResizeMode.COVER}
-      shouldPlay
-      isLooping
-      isMuted
-    />
-  </View>
-
-</View>
-
+        <View className="w-full  mt-8 items-center">
+          <View className="w-11/12 rounded-3xl overflow-hidden shadow-xl bg-black">
+            <Video
+              source={require("../assets/images/video.home.mp4")}
+              style={{ width: "100%", height: 220 }}
+              resizeMode={ResizeMode.COVER}
+              shouldPlay
+              isLooping
+              isMuted
+            />
+          </View>
+        </View>
+        <View className="flex items-center justify-center ">
+          <Image source={btnimg}  className="rounded-2xl"
+            style={{ width: " 100%", height: 200 }} />
+        </View>
+        
       </ScrollView>
     </SafeAreaView>
   );
