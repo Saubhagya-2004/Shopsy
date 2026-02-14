@@ -10,7 +10,7 @@ import { Link } from 'expo-router';
 export default function HomeScreen() {
   return (
    <View className='text-red-500 bg-gray-500 flex justify-center min-h-screen items-center'>
-    <Text style={{fontFamily:'appBold'}} className='text-white text-2xl'>Hellobb</Text>
+    <Text style={{fontFamily:'appBold'}} className='text-white text-2xl'>Profile Hi</Text>
    </View>
   );
 }
