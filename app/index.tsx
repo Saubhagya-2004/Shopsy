@@ -28,7 +28,7 @@ export default function index() {
         <View className="w-3/4 self-center">
           <TouchableOpacity
             className="p-2 my-2 bg-green-600 rounded-xl"
-            onPress={() => router.push("/")}
+            onPress={() => router.push("/Signup")}
           >
             <Text className="text-xl text-center font-semibold text-white">
               Sign Up
@@ -72,10 +72,12 @@ export default function index() {
           </View>
         </View>
         <View className="flex items-center justify-center ">
-          <Image source={btnimg}  className="rounded-2xl"
-            style={{ width: " 100%", height: 200 }} />
+          <Image
+            source={btnimg}
+            className="rounded-2xl"
+            style={{ width: " 100%", height: 200 }}
+          />
         </View>
-        
       </ScrollView>
     </SafeAreaView>
   );
