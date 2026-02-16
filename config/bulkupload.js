@@ -6,7 +6,7 @@ const uploadData = async()=>{
     try {
         for(let i=0;i<resturantdata.length;i++){
             const restaurants = resturantdata[i];
-            const docRef = doc(collection(db," slot"),` slot${i+1}`)
+            const docRef = doc(collection(db,"slots"),`slot_${i+1}`)
             await setDoc(docRef,restaurants)
             console.log('Data uploaded')
         }
@@ -14,4 +14,4 @@ const uploadData = async()=>{
         console.log('Error uploading data',error)
     }
 }
-export default uploadData 
+export default uploadData; 
