@@ -108,6 +108,113 @@ const restaurants = [
     seats: 120,
   },
 ];
+ const discounts = [
+  {
+    name: "Golden Spoon Bistro",
+    seats: 60,
+    image: "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg",
+    address: "210 Palm Avenue, Suite 101, Orlando, FL 32801",
+    opening: "10:00",
+    closing: "22:30",
+  },
+  {
+    name: "Urban Flame Kitchen",
+    seats: 80,
+    image: "https://images.pexels.com/photos/674574/pexels-photo-674574.jpeg",
+    address: "55 Market Street, Suite 402, Denver, CO 80202",
+    opening: "11:30",
+    closing: "23:45",
+  },
+  {
+    name: "Blue Harbor Café",
+    seats: 45,
+    image: "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
+    address: "88 Ocean View Blvd, Santa Monica, CA 90401",
+    opening: "09:00",
+    closing: "21:00",
+  },
+  {
+    name: "Spice Garden Grill",
+    seats: 90,
+    image: "https://images.pexels.com/photos/941861/pexels-photo-941861.jpeg",
+    address: "700 Maple Road, Suite 200, Atlanta, GA 30303",
+    opening: "12:00",
+    closing: "00:30",
+  },
+  {
+    name: "Midtown Delight",
+    seats: 70,
+    image: "https://images.pexels.com/photos/958545/pexels-photo-958545.jpeg",
+    address: "101 Broadway Ave, Suite 305, Boston, MA 02108",
+    opening: "10:30",
+    closing: "22:00",
+  },
+  {
+    name: "Harvest Table Eatery",
+    seats: 65,
+    image: "https://images.pexels.com/photos/675951/pexels-photo-675951.jpeg",
+    address: "340 Sunset Lane, Suite 500, Phoenix, AZ 85004",
+    opening: "11:00",
+    closing: "23:00",
+  },
+  {
+    name: "Silver Plate Diner",
+    seats: 50,
+    image: "https://images.pexels.com/photos/1581384/pexels-photo-1581384.jpeg",
+    address: "456 King Avenue, Suite 110, Charlotte, NC 28202",
+    opening: "08:30",
+    closing: "20:30",
+  },
+  {
+    name: "Crimson Fork House",
+    seats: 100,
+    image: "https://images.pexels.com/photos/704971/pexels-photo-704971.jpeg",
+    address: "920 River Street, Suite 240, Austin, TX 73301",
+    opening: "13:00",
+    closing: "01:00",
+  },
+  {
+    name: "The Rustic Oven",
+    seats: 75,
+    image: "https://images.pexels.com/photos/460537/pexels-photo-460537.jpeg",
+    address: "333 Cedar Blvd, Suite 330, Portland, OR 97201",
+    opening: "10:00",
+    closing: "22:45",
+  },
+  {
+    name: "Metro Taste Hub",
+    seats: 85,
+    image: "https://images.pexels.com/photos/776538/pexels-photo-776538.jpeg",
+    address: "120 City Center Plaza, Suite 410, Houston, TX 77002",
+    opening: "11:00",
+    closing: "23:30",
+  },
+  {
+    name: "Sunrise Terrace Café",
+    seats: 40,
+    image: "https://images.pexels.com/photos/1565982/pexels-photo-1565982.jpeg",
+    address: "789 Lake Drive, Suite 201, Tampa, FL 33602",
+    opening: "07:30",
+    closing: "19:30",
+  },
+  {
+    name: "Emerald Coast Grill",
+    seats: 95,
+    image: "https://images.pexels.com/photos/239975/pexels-photo-239975.jpeg",
+    address: "540 Beach Road, Suite 102, San Diego, CA 92101",
+    opening: "12:00",
+    closing: "00:00",
+  },
+  {
+    name: "Citrus Bay Kitchen",
+    seats: 110,
+    image: "https://images.pexels.com/photos/1307698/pexels-photo-1307698.jpeg",
+    address: "678 Harbor Street, Suite 600, Miami, FL 33101",
+    opening: "11:30",
+    closing: "23:15",
+  },
+];
+
 const carouselImages = [
   {
     images: [
@@ -307,4 +414,4 @@ const slots = [
   },
 ];
 
-export { restaurants, carouselImages, slots };
+export { restaurants, carouselImages, slots,discounts };
