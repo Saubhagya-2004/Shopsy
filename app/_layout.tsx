@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css'
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import {useFonts} from 'expo-font'
+import { useFonts } from 'expo-font'
 import { ActivityIndicator } from 'react-native';
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -13,12 +13,12 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [fontloaded] = useFonts({
-'appFont':require('./../assets/fonts/PlaywriteNZBasic-Regular.ttf'),
-'appBold': require('./../assets/fonts/PlaywriteNZBasic-Thin.ttf') 
+    'appFont': require('./../assets/fonts/PlaywriteNZBasic-Regular.ttf'),
+    'appBold': require('./../assets/fonts/PlaywriteNZBasic-Thin.ttf')
   })
-  if(!fontloaded){
+  if (!fontloaded) {
     {
-      return <ActivityIndicator/>
+      return <ActivityIndicator />
     }
   }
   return (
@@ -27,6 +27,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="restaurant/[restaurant]" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />
