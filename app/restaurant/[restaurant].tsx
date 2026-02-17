@@ -11,12 +11,14 @@ import {
   TouchableOpacity,
   View,
   StatusBar,
+  Modal,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/config/firebaseconfig";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import {
   restaurants as localRestaurants,
   carouselImages,
@@ -57,6 +59,11 @@ export default function RestaurantDetail() {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const carouselRef = useRef<FlatList>(null);
+  
+  // Date States
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [tempDate, setTempDate] = useState(new Date());
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -126,7 +133,7 @@ export default function RestaurantDetail() {
     viewAreaCoveragePercentThreshold: 50,
   }).current;
 
-  // ── FIX 1: Directions opens navigation FROM current location ──────────────
+  // ── Directions opens navigation FROM current location ──────────────
   const handleGetDirections = () => {
     if (!data?.address) return;
 
@@ -138,15 +145,10 @@ export default function RestaurantDetail() {
       ? `${data.latitude},${data.longitude}`
       : encoded;
 
-    // iOS: Apple Maps with saddr=current location (origin), daddr=destination
     const iosUrl = `maps://?saddr=Current+Location&daddr=${destination}`;
-
-    // Android: Google Maps navigation from current location to destination
     const androidUrl = hasCoords
       ? `google.navigation:q=${data.latitude},${data.longitude}&mode=d`
       : `google.navigation:q=${encoded}&mode=d`;
-
-    // Web fallback: Google Maps directions with no origin = uses current location
     const webFallback = hasCoords
       ? `https://www.google.com/maps/dir/?api=1&destination=${data.latitude},${data.longitude}&travelmode=driving`
       : `https://www.google.com/maps/dir/?api=1&destination=${encoded}&travelmode=driving`;
@@ -165,6 +167,27 @@ export default function RestaurantDetail() {
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
+  // ── Date formatting ───────────────────────────────────────────────────────
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  // ── Date selection handlers ───────────────────────────────────────────────
+  const handleDateConfirm = () => {
+    setSelectedDate(tempDate);
+    setShowDateModal(false);
+  };
+
+  const handleDateCancel = () => {
+    setTempDate(selectedDate);
+    setShowDateModal(false);
+  };
+
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-[#d1bea7] justify-center items-center">
@@ -180,11 +203,6 @@ export default function RestaurantDetail() {
       </SafeAreaView>
     );
   }
-  const currentdata = new Date().toLocaleString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',});
 
   return (
     <>
@@ -199,7 +217,6 @@ export default function RestaurantDetail() {
             CAROUSEL — full bleed from top
         ══════════════════════════════════════════════════════ */}
         <View className="relative" style={{ height: 300 }}>
-
           {images.length > 0 ? (
             <>
               <FlatList
@@ -225,7 +242,6 @@ export default function RestaurantDetail() {
                 )}
               />
 
-              {/* FIX 2: Arrows — orange ring, rounded, centered vertically */}
               {images.length > 1 && (
                 <>
                   <CarouselArrow direction="left" onPress={goToPrev} />
@@ -266,7 +282,7 @@ export default function RestaurantDetail() {
             />
           ) : null}
 
-          {/* Back Button — orange ring, matches arrow style */}
+          {/* Back Button */}
           <TouchableOpacity
             onPress={() => router.back()}
             activeOpacity={0.8}
@@ -278,10 +294,9 @@ export default function RestaurantDetail() {
         </View>
 
         {/* ══════════════════════════════════════════════════════
-            FIX 3 & 4: Name + Address UNDER carousel, BEFORE card
-            with gap from carousel
+            Name + Address UNDER carousel
         ══════════════════════════════════════════════════════ */}
-        <View className="px-5 pt-5 pb-2 ">
+        <View className="px-5 pt-5 pb-2">
           <Text className="text-2xl font-bold text-slate-800" numberOfLines={1}>
             {data.name}
           </Text>
@@ -294,11 +309,9 @@ export default function RestaurantDetail() {
         </View>
 
         {/* ══════════════════════════════════════════════════════
-            INFO CARD — below name/address with gap
+            INFO CARD
         ══════════════════════════════════════════════════════ */}
         <View className="mx-4 mt-3 rounded-3xl bg-white px-6 py-5 shadow-lg">
-
-          {/* Gold accent */}
           <View className="h-0.5 w-10 bg-orange-400 rounded-full mb-4" />
 
           {/* Address row + Directions */}
@@ -315,7 +328,6 @@ export default function RestaurantDetail() {
               </Text>
             </View>
 
-            {/* FIX 1: Directions — navigates FROM current location */}
             <TouchableOpacity
               onPress={handleGetDirections}
               activeOpacity={0.8}
@@ -329,7 +341,6 @@ export default function RestaurantDetail() {
             </TouchableOpacity>
           </View>
 
-          {/* Divider */}
           <View className="h-px bg-slate-100 mb-3" />
 
           {/* Hours */}
@@ -341,7 +352,6 @@ export default function RestaurantDetail() {
                 <Text className="text-slate-300"> – </Text>
                 {data.closing}
               </Text>
-              
             </View>
           )}
 
@@ -357,19 +367,32 @@ export default function RestaurantDetail() {
         </View>
 
         {/* ══════════════════════════════════════════════════════
-            TIME SLOTS
+            DATE SELECTOR & TIME SLOTS
         ══════════════════════════════════════════════════════ */}
         {timeSlots.length > 0 && (
           <View className="mt-6 px-4">
-
             <View className="flex-row items-center gap-3 mb-4">
               <View className="w-1 h-6 bg-orange-400 rounded-full" />
               <Text className="text-lg font-bold text-slate-800">
                 🕐 Available Slots
               </Text>
-               <Text className="bg-slate-50 border  py-2 px-0.5 rounded-lg font-medium text-gray-700">{currentdata}</Text>
             </View>
 
+            {/* Date Selector Button */}
+            <TouchableOpacity
+              onPress={() => {
+                setTempDate(selectedDate);
+                setShowDateModal(true);
+              }}
+              className="bg-white border border-slate-200 px-4 py-3 rounded-xl mb-4 flex-row items-center justify-between"
+            >
+              <Text className="text-slate-700 font-semibold">
+                📅 {formatDate(selectedDate)}
+              </Text>
+              <Ionicons name="chevron-down" size={18} color="#64748b" />
+            </TouchableOpacity>
+
+            {/* Time Slots */}
             <View className="flex-row flex-wrap gap-3">
               {timeSlots.map((time: string, i: number) => {
                 const isSelected = selectedSlot === time;
@@ -406,7 +429,7 @@ export default function RestaurantDetail() {
               >
                 <Ionicons name="calendar-outline" size={20} color="#fb923c" />
                 <Text className="text-orange-400 text-base font-bold">
-                  Book at {selectedSlot}
+                  Book at {selectedSlot} • {formatDate(selectedDate)}
                 </Text>
               </TouchableOpacity>
             )}
@@ -416,16 +439,81 @@ export default function RestaurantDetail() {
         <View className="h-14" />
       </ScrollView>
 
+      {/* ══════════════════════════════════════════════════════
+          DATE MODAL
+      ══════════════════════════════════════════════════════ */}
+      <Modal
+        visible={showDateModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={handleDateCancel}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white rounded-t-3xl p-5">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-lg font-bold text-slate-800">Select Date</Text>
+              <TouchableOpacity onPress={handleDateCancel}>
+                <Ionicons name="close" size={24} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            {Platform.OS === 'ios' ? (
+              <View className="py-2">
+                <DateTimePicker
+                  value={tempDate}
+                  mode="date"
+                  display="spinner"
+                  onChange={(event, date) => date && setTempDate(date)}
+                  minimumDate={new Date()}
+                  textColor="#1e293b"
+                />
+              </View>
+            ) : (
+              <DateTimePicker
+                value={tempDate}
+                mode="date"
+                display="default"
+                onChange={(event, date) => {
+                  if (date) {
+                    setTempDate(date);
+                    setSelectedDate(date);
+                    setShowDateModal(false);
+                  }
+                }}
+                minimumDate={new Date()}
+              />
+            )}
+
+            {Platform.OS === 'ios' && (
+              <View className="flex-row gap-3 mt-4">
+                <TouchableOpacity
+                  onPress={handleDateCancel}
+                  className="flex-1 py-3 rounded-xl bg-slate-200"
+                >
+                  <Text className="text-slate-700 text-center font-semibold">Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleDateConfirm}
+                  className="flex-1 py-3 rounded-xl bg-slate-800"
+                >
+                  <Text className="text-orange-400 text-center font-semibold">Confirm</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
       {/* Success Toast */}
       {showSuccess && (
         <View className="absolute bottom-10 left-4 right-4 bg-green-600 py-3.5 px-5
           rounded-2xl flex-row items-center gap-3 z-50 shadow-xl">
           <Ionicons name="checkmark-circle" size={22} color="#fff" />
           <Text className="text-white font-semibold text-sm flex-1">
-            Booking confirmed for {selectedSlot}!
+            Booking confirmed for {selectedSlot} on {formatDate(selectedDate)}!
           </Text>
         </View>
       )}
     </>
   );
-} 
+}
