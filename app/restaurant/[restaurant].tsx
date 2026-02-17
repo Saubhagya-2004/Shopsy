@@ -64,6 +64,9 @@ export default function RestaurantDetail() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDateModal, setShowDateModal] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
+  
+  // Guest count state (1-12)
+  const [guestCount, setGuestCount] = useState(2);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -158,6 +161,19 @@ export default function RestaurantDetail() {
     Linking.canOpenURL(url)
       .then((supported) => Linking.openURL(supported ? url : webFallback))
       .catch(() => Linking.openURL(webFallback));
+  };
+
+  // ── Guest count handlers ─────────────────────────────────────────────────
+  const incrementGuests = () => {
+    if (guestCount < 12) {
+      setGuestCount(guestCount + 1);
+    }
+  };
+
+  const decrementGuests = () => {
+    if (guestCount > 1) {
+      setGuestCount(guestCount - 1);
+    }
   };
 
   // ── Booking ───────────────────────────────────────────────────────────────
@@ -419,6 +435,66 @@ export default function RestaurantDetail() {
               })}
             </View>
 
+            {/* Guest Selector - Only show when a time slot is selected */}
+            {selectedSlot && (
+              <View className="mt-6">
+                <View className="flex-row items-center gap-3 mb-3">
+                  <View className="w-1 h-5 bg-orange-400 rounded-full" />
+                  <Text className="text-base font-semibold text-slate-700">
+                    Number of Guests
+                  </Text>
+                </View>
+                
+                <View className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                  <View className="flex-row items-center justify-between">
+                    <TouchableOpacity
+                      onPress={decrementGuests}
+                      disabled={guestCount <= 1}
+                      className={`w-12 h-12 rounded-full items-center justify-center
+                        ${guestCount <= 1 
+                          ? "bg-slate-100" 
+                          : "bg-slate-800 border border-orange-400"}`}
+                    >
+                      <Ionicons 
+                        name="remove" 
+                        size={24} 
+                        color={guestCount <= 1 ? "#94a3b8" : "#fb923c"} 
+                      />
+                    </TouchableOpacity>
+
+                    <View className="items-center">
+                      <Text className="text-3xl font-bold text-slate-800">
+                        {guestCount}
+                      </Text>
+                      <Text className="text-xs text-slate-500">
+                        {guestCount === 1 ? "Guest" : "Guests"}
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      onPress={incrementGuests}
+                      disabled={guestCount >= 12}
+                      className={`w-12 h-12 rounded-full items-center justify-center
+                        ${guestCount >= 12 
+                          ? "bg-slate-100" 
+                          : "bg-slate-800 border border-orange-400"}`}
+                    >
+                      <Ionicons 
+                        name="add" 
+                        size={24} 
+                        color={guestCount >= 12 ? "#94a3b8" : "#fb923c"} 
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Max guests note */}
+                  <Text className="text-xs text-slate-400 text-center mt-2">
+                    Maximum 12 guests
+                  </Text>
+                </View>
+              </View>
+            )}
+
             {/* Book Button */}
             {selectedSlot && (
               <TouchableOpacity
@@ -429,7 +505,7 @@ export default function RestaurantDetail() {
               >
                 <Ionicons name="calendar-outline" size={20} color="#fb923c" />
                 <Text className="text-orange-400 text-base font-bold">
-                  Book at {selectedSlot} • {formatDate(selectedDate)}
+                  Book for {guestCount} {guestCount === 1 ? "guest" : "guests"} at {selectedSlot}
                 </Text>
               </TouchableOpacity>
             )}
@@ -510,7 +586,7 @@ export default function RestaurantDetail() {
           rounded-2xl flex-row items-center gap-3 z-50 shadow-xl">
           <Ionicons name="checkmark-circle" size={22} color="#fff" />
           <Text className="text-white font-semibold text-sm flex-1">
-            Booking confirmed for {selectedSlot} on {formatDate(selectedDate)}!
+             {guestCount} {guestCount === 1 ? "guest" : "guests"} booked for {selectedSlot} on {formatDate(selectedDate)}!
           </Text>
         </View>
       )}
