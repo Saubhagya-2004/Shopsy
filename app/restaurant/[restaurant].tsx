@@ -4,6 +4,8 @@ import {
   Dimensions,
   FlatList,
   Image,
+  Linking,
+  Platform,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -23,7 +25,7 @@ import {
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-// ─── Carousel Arrow Button ────────────────────────────────────────────────────
+// ─── Carousel Arrow — orange ring, rounded, bg changes ───────────────────────
 const CarouselArrow = ({
   direction,
   onPress,
@@ -33,27 +35,19 @@ const CarouselArrow = ({
 }) => (
   <TouchableOpacity
     onPress={onPress}
-    activeOpacity={0.75}
+    activeOpacity={0.7}
     className={`absolute top-1/2 -translate-y-5 z-20 w-10 h-10 rounded-full
-      items-center justify-center border-2 border-yellow-400 bg-white/80
+      bg-black/50 border-2 border-orange-400 items-center justify-center
       ${direction === "left" ? "left-3" : "right-3"}`}
-    style={{
-      elevation: 6,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 4,
-    }}
   >
     <Ionicons
       name={direction === "left" ? "chevron-back" : "chevron-forward"}
       size={22}
-      color="#1e293b"
+      color="#fb923c"
     />
   </TouchableOpacity>
 );
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function RestaurantDetail() {
   const { restaurant } = useLocalSearchParams();
   const router = useRouter();
@@ -64,17 +58,15 @@ export default function RestaurantDetail() {
   const [showSuccess, setShowSuccess] = useState(false);
   const carouselRef = useRef<FlatList>(null);
 
-  // ── Fetch restaurant ──────────────────────────────────────────────────────
+  // ── Fetch ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchRestaurant = async () => {
       try {
         const docRef = doc(db, "restaurants", restaurant as string);
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setData({ id: docSnap.id, ...docSnap.data() });
-        }
-      } catch (error) {
-        console.log("Error fetching restaurant:", error);
+        if (docSnap.exists()) setData({ id: docSnap.id, ...docSnap.data() });
+      } catch (e) {
+        console.log(e);
       } finally {
         setLoading(false);
       }
@@ -82,7 +74,6 @@ export default function RestaurantDetail() {
     if (restaurant) fetchRestaurant();
   }, [restaurant]);
 
-  // ── Match local data ──────────────────────────────────────────────────────
   const matchIndex = data
     ? (localRestaurants as any[]).findIndex((r: any) => r.name === data.name)
     : -1;
@@ -110,7 +101,7 @@ export default function RestaurantDetail() {
     return () => clearInterval(timer);
   }, [images.length]);
 
-  // ── Manual navigation ─────────────────────────────────────────────────────
+  // ── Navigation ────────────────────────────────────────────────────────────
   const goToPrev = useCallback(() => {
     setActiveSlide((prev) => {
       const next = prev === 0 ? images.length - 1 : prev - 1;
@@ -128,14 +119,44 @@ export default function RestaurantDetail() {
   }, [images.length]);
 
   const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
-    if (viewableItems.length > 0) {
-      setActiveSlide(viewableItems[0].index ?? 0);
-    }
+    if (viewableItems.length > 0) setActiveSlide(viewableItems[0].index ?? 0);
   }, []);
 
   const viewabilityConfig = useRef({
     viewAreaCoveragePercentThreshold: 50,
   }).current;
+
+  // ── FIX 1: Directions opens navigation FROM current location ──────────────
+  const handleGetDirections = () => {
+    if (!data?.address) return;
+
+    const encoded = encodeURIComponent(data.address);
+    const hasCoords =
+      data.latitude !== undefined && data.longitude !== undefined;
+
+    const destination = hasCoords
+      ? `${data.latitude},${data.longitude}`
+      : encoded;
+
+    // iOS: Apple Maps with saddr=current location (origin), daddr=destination
+    const iosUrl = `maps://?saddr=Current+Location&daddr=${destination}`;
+
+    // Android: Google Maps navigation from current location to destination
+    const androidUrl = hasCoords
+      ? `google.navigation:q=${data.latitude},${data.longitude}&mode=d`
+      : `google.navigation:q=${encoded}&mode=d`;
+
+    // Web fallback: Google Maps directions with no origin = uses current location
+    const webFallback = hasCoords
+      ? `https://www.google.com/maps/dir/?api=1&destination=${data.latitude},${data.longitude}&travelmode=driving`
+      : `https://www.google.com/maps/dir/?api=1&destination=${encoded}&travelmode=driving`;
+
+    const url = Platform.OS === "ios" ? iosUrl : androidUrl;
+
+    Linking.canOpenURL(url)
+      .then((supported) => Linking.openURL(supported ? url : webFallback))
+      .catch(() => Linking.openURL(webFallback));
+  };
 
   // ── Booking ───────────────────────────────────────────────────────────────
   const handleBook = () => {
@@ -144,7 +165,6 @@ export default function RestaurantDetail() {
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
-  // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-[#d1bea7] justify-center items-center">
@@ -153,7 +173,6 @@ export default function RestaurantDetail() {
     );
   }
 
-  // ── Not found ─────────────────────────────────────────────────────────────
   if (!data) {
     return (
       <SafeAreaView className="flex-1 bg-[#d1bea7] justify-center items-center">
@@ -164,7 +183,6 @@ export default function RestaurantDetail() {
 
   return (
     <>
-      {/* Full-bleed transparent status bar */}
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
       <ScrollView
@@ -172,10 +190,11 @@ export default function RestaurantDetail() {
         showsVerticalScrollIndicator={false}
         bounces={false}
       >
-        {/* ════════════════════════════════════════════════════════════════
-            CAROUSEL — edge-to-edge, starts at very top (no SafeArea)
-        ════════════════════════════════════════════════════════════════ */}
-        <View className="relative">
+        {/* ══════════════════════════════════════════════════════
+            CAROUSEL — full bleed from top
+        ══════════════════════════════════════════════════════ */}
+        <View className="relative" style={{ height: 300 }}>
+
           {images.length > 0 ? (
             <>
               <FlatList
@@ -195,19 +214,13 @@ export default function RestaurantDetail() {
                 renderItem={({ item: uri }: { item: string }) => (
                   <Image
                     source={{ uri }}
-                    style={{ width: SCREEN_WIDTH, height: 360 }}
+                    style={{ width: SCREEN_WIDTH, height: 300 }}
                     resizeMode="cover"
                   />
                 )}
               />
 
-              {/* Dark gradient overlay at bottom of carousel */}
-              <View
-                className="absolute bottom-0 left-0 right-0 h-28"
-                pointerEvents="none"
-              />
-
-              {/* Left / Right Arrows */}
+              {/* FIX 2: Arrows — orange ring, rounded, centered vertically */}
               {images.length > 1 && (
                 <>
                   <CarouselArrow direction="left" onPress={goToPrev} />
@@ -215,15 +228,8 @@ export default function RestaurantDetail() {
                 </>
               )}
 
-              {/* Image counter pill — top right */}
-              <View className="absolute top-14 right-4 bg-black/50 rounded-full px-3 py-1 border border-white/20">
-                <Text className="text-white text-xs font-semibold">
-                  {activeSlide + 1} / {images.length}
-                </Text>
-              </View>
-
-              {/* Dot indicators — bottom centre */}
-              <View className="absolute bottom-5 w-full flex-row justify-center items-center gap-1.5">
+              {/* Dot Indicators */}
+              <View className="absolute bottom-3 w-full flex-row justify-center items-center gap-1.5 z-10">
                 {images.map((_: any, i: number) => (
                   <TouchableOpacity
                     key={i}
@@ -231,76 +237,100 @@ export default function RestaurantDetail() {
                       carouselRef.current?.scrollToIndex({ index: i, animated: true });
                       setActiveSlide(i);
                     }}
-                    style={{
-                      width: i === activeSlide ? 24 : 8,
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor:
-                        i === activeSlide
-                          ? "#ffd700"
-                          : "rgba(255,255,255,0.55)",
-                    }}
+                    className={`rounded-full ${
+                      i === activeSlide
+                        ? "w-5 h-2 bg-orange-400"
+                        : "w-2 h-2 bg-white/50"
+                    }`}
                   />
                 ))}
+              </View>
+
+              {/* Image counter */}
+              <View className="absolute top-12 right-4 bg-black/50 rounded-full px-3 py-1 z-30">
+                <Text className="text-white text-xs font-semibold">
+                  {activeSlide + 1} / {images.length}
+                </Text>
               </View>
             </>
           ) : data.image ? (
             <Image
               source={{ uri: data.image }}
-              style={{ width: SCREEN_WIDTH, height: 360 }}
+              style={{ width: SCREEN_WIDTH, height: 300 }}
               resizeMode="cover"
             />
           ) : null}
 
-          {/* ── Back button — top left, over the image ── */}
+          {/* Back Button — orange ring, matches arrow style */}
           <TouchableOpacity
             onPress={() => router.back()}
-            className="absolute top-14 left-4 z-30 w-10 h-10 rounded-full
-              bg-white/80 border-2 border-yellow-400 items-center justify-center"
-            style={{
-              elevation: 6,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.2,
-              shadowRadius: 4,
-            }}
             activeOpacity={0.8}
+            className="absolute top-12 left-4 z-30 w-10 h-10 rounded-full
+              bg-black/50 border-2 border-orange-400 items-center justify-center"
           >
-            <Ionicons name="arrow-back" size={20} color="#1e293b" />
+            <Ionicons name="arrow-back" size={20} color="#fb923c" />
           </TouchableOpacity>
         </View>
 
-        {/* ════════════════════════════════════════════════════════════════
-            INFO CARD — overlaps the carousel by -mt-8
-        ════════════════════════════════════════════════════════════════ */}
-        <View
-          className="mx-4 -mt-8 rounded-3xl bg-white px-6 py-5"
-          style={{
-            elevation: 10,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.15,
-            shadowRadius: 12,
-          }}
-        >
-          {/* Name */}
-          <Text className="text-2xl font-bold text-slate-800">{data.name}</Text>
-
-          {/* Gold divider */}
-          <View className="h-[2px] w-12 bg-yellow-400 rounded-full mt-2 mb-4" />
-
-          {/* Address */}
-          <View className="flex-row items-start gap-2 mb-2">
-            <Ionicons name="location-outline" size={17} color="#94a3b8" style={{ marginTop: 1 }} />
-            <Text className="text-sm text-slate-500 flex-1 leading-5">
+        {/* ══════════════════════════════════════════════════════
+            FIX 3 & 4: Name + Address UNDER carousel, BEFORE card
+            with gap from carousel
+        ══════════════════════════════════════════════════════ */}
+        <View className="px-5 pt-5 pb-2">
+          <Text className="text-2xl font-bold text-slate-800" numberOfLines={1}>
+            {data.name}
+          </Text>
+          <View className="flex-row items-center gap-1.5 mt-1">
+            <Ionicons name="location-outline" size={14} color="#EA4335" />
+            <Text className="text-sm text-slate-500 flex-1" numberOfLines={2}>
               {data.address}
             </Text>
           </View>
+        </View>
+
+        {/* ══════════════════════════════════════════════════════
+            INFO CARD — below name/address with gap
+        ══════════════════════════════════════════════════════ */}
+        <View className="mx-4 mt-3 rounded-3xl bg-white px-6 py-5 shadow-lg">
+
+          {/* Gold accent */}
+          <View className="h-0.5 w-10 bg-orange-400 rounded-full mb-4" />
+
+          {/* Address row + Directions */}
+          <View className="flex-row items-start justify-between gap-3 mb-3">
+            <View className="flex-row items-start gap-2 flex-1">
+              <Ionicons
+                name="map-outline"
+                size={16}
+                color="#94a3b8"
+                style={{ marginTop: 2 }}
+              />
+              <Text className="text-sm text-slate-500 flex-1 leading-5">
+                {data.address}
+              </Text>
+            </View>
+
+            {/* FIX 1: Directions — navigates FROM current location */}
+            <TouchableOpacity
+              onPress={handleGetDirections}
+              activeOpacity={0.8}
+              className="flex-row items-center gap-1.5 bg-slate-800 px-3 py-2
+                rounded-xl border border-orange-400"
+            >
+              <Ionicons name="navigate" size={14} color="#fb923c" />
+              <Text className="text-orange-400 text-xs font-bold">
+                Directions
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Divider */}
+          <View className="h-px bg-slate-100 mb-3" />
 
           {/* Hours */}
           {(data.opening || data.closing) && (
             <View className="flex-row items-center gap-2 mb-2">
-              <Ionicons name="time-outline" size={17} color="#94a3b8" />
+              <Ionicons name="time-outline" size={16} color="cyan" />
               <Text className="text-sm text-slate-500">
                 {data.opening}
                 <Text className="text-slate-300"> – </Text>
@@ -312,7 +342,7 @@ export default function RestaurantDetail() {
           {/* Seats */}
           {data.seats && (
             <View className="flex-row items-center gap-2">
-              <Ionicons name="people-outline" size={17} color="#94a3b8" />
+              <Ionicons name="people-outline" size={16} color="green" />
               <Text className="text-sm text-slate-500">
                 {data.seats} seats available
               </Text>
@@ -320,21 +350,19 @@ export default function RestaurantDetail() {
           )}
         </View>
 
-        {/* ════════════════════════════════════════════════════════════════
+        {/* ══════════════════════════════════════════════════════
             TIME SLOTS
-        ════════════════════════════════════════════════════════════════ */}
+        ══════════════════════════════════════════════════════ */}
         {timeSlots.length > 0 && (
           <View className="mt-6 px-4">
 
-            {/* Section heading */}
             <View className="flex-row items-center gap-3 mb-4">
-              <View className="w-1 h-6 bg-yellow-400 rounded-full" />
+              <View className="w-1 h-6 bg-orange-400 rounded-full" />
               <Text className="text-lg font-bold text-slate-800">
                 🕐 Available Slots
               </Text>
             </View>
 
-            {/* Slot chips */}
             <View className="flex-row flex-wrap gap-3">
               {timeSlots.map((time: string, i: number) => {
                 const isSelected = selectedSlot === time;
@@ -345,20 +373,13 @@ export default function RestaurantDetail() {
                     activeOpacity={0.8}
                     className={`py-2.5 px-5 rounded-xl border-2 ${
                       isSelected
-                        ? "bg-slate-800 border-yellow-400"
-                        : "bg-white border-slate-200"
+                        ? "bg-slate-800 border-orange-400 shadow-md"
+                        : "bg-white border-slate-200 shadow-sm"
                     }`}
-                    style={{
-                      elevation: isSelected ? 5 : 2,
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: isSelected ? 3 : 1 },
-                      shadowOpacity: isSelected ? 0.18 : 0.07,
-                      shadowRadius: isSelected ? 5 : 3,
-                    }}
                   >
                     <Text
                       className={`text-sm font-semibold ${
-                        isSelected ? "text-yellow-400" : "text-slate-600"
+                        isSelected ? "text-orange-400" : "text-slate-600"
                       }`}
                     >
                       {time}
@@ -368,23 +389,16 @@ export default function RestaurantDetail() {
               })}
             </View>
 
-            {/* Book button */}
+            {/* Book Button */}
             {selectedSlot && (
               <TouchableOpacity
                 onPress={handleBook}
                 activeOpacity={0.85}
-                className="mt-6 bg-slate-800 rounded-2xl py-4 border-2 border-yellow-400
-                  flex-row items-center justify-center gap-2"
-                style={{
-                  elevation: 7,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.22,
-                  shadowRadius: 8,
-                }}
+                className="mt-6 bg-slate-800 rounded-2xl py-4 border-2 border-orange-400
+                  flex-row items-center justify-center gap-2 shadow-lg"
               >
-                <Ionicons name="calendar-outline" size={20} color="#ffd700" />
-                <Text className="text-yellow-400 text-base font-bold">
+                <Ionicons name="calendar-outline" size={20} color="#fb923c" />
+                <Text className="text-orange-400 text-base font-bold">
                   Book at {selectedSlot}
                 </Text>
               </TouchableOpacity>
@@ -395,21 +409,10 @@ export default function RestaurantDetail() {
         <View className="h-14" />
       </ScrollView>
 
-      {/* ════════════════════════════════════════════════════════════════
-          SUCCESS TOAST
-      ════════════════════════════════════════════════════════════════ */}
+      {/* Success Toast */}
       {showSuccess && (
-        <View
-          className="absolute bottom-10 left-4 right-4 bg-green-600 py-3.5 px-5
-            rounded-2xl flex-row items-center gap-3 z-50"
-          style={{
-            elevation: 10,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.25,
-            shadowRadius: 8,
-          }}
-        >
+        <View className="absolute bottom-10 left-4 right-4 bg-green-600 py-3.5 px-5
+          rounded-2xl flex-row items-center gap-3 z-50 shadow-xl">
           <Ionicons name="checkmark-circle" size={22} color="#fff" />
           <Text className="text-white font-semibold text-sm flex-1">
             Booking confirmed for {selectedSlot}!
@@ -418,4 +421,4 @@ export default function RestaurantDetail() {
       )}
     </>
   );
-}
+} 
