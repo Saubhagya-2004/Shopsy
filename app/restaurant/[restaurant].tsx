@@ -180,6 +180,11 @@ export default function RestaurantDetail() {
       </SafeAreaView>
     );
   }
+  const currentdata = new Date().toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',});
 
   return (
     <>
@@ -276,7 +281,7 @@ export default function RestaurantDetail() {
             FIX 3 & 4: Name + Address UNDER carousel, BEFORE card
             with gap from carousel
         ══════════════════════════════════════════════════════ */}
-        <View className="px-5 pt-5 pb-2">
+        <View className="px-5 pt-5 pb-2 ">
           <Text className="text-2xl font-bold text-slate-800" numberOfLines={1}>
             {data.name}
           </Text>
@@ -336,6 +341,7 @@ export default function RestaurantDetail() {
                 <Text className="text-slate-300"> – </Text>
                 {data.closing}
               </Text>
+              
             </View>
           )}
 
@@ -361,6 +367,7 @@ export default function RestaurantDetail() {
               <Text className="text-lg font-bold text-slate-800">
                 🕐 Available Slots
               </Text>
+               <Text className="bg-slate-50 border  py-2 px-0.5 rounded-lg font-medium text-gray-700">{currentdata}</Text>
             </View>
 
             <View className="flex-row flex-wrap gap-3">
