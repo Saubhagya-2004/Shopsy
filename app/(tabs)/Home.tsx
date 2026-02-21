@@ -38,7 +38,7 @@ const ArrowButton = ({
     onPress={onPress}
     disabled={disabled}
     activeOpacity={0.7}
-    className={`w-9 h-9 rounded-full items-center justify-center border-2 ${
+    className={`w-12 h-12 rounded-full items-center justify-center border-2 ${
       disabled
         ? "bg-stone-300/50 border-stone-300"
         : "bg-slate-800 border-amber-400"
@@ -78,7 +78,7 @@ const SectionHeader = ({
 }) => (
   <View className="flex-row items-center justify-between px-4 mt-5 mb-3">
     <Text className="text-xl font-bold text-slate-800 flex-1">{title}</Text>
-    <View className="flex-row gap-2">
+    <View className="flex-row gap-2 ">
       <ArrowButton direction="left" onPress={onLeft} disabled={!canLeft} />
       <ArrowButton direction="right" onPress={onRight} disabled={!canRight} />
     </View>
@@ -90,7 +90,6 @@ export default function Home() {
   const router = useRouter();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(false);
-
   const restaurantRef = useRef<FlatList<Restaurant>>(null);
   const discountRef = useRef<FlatList<any>>(null);
   const [restIndex, setRestIndex] = useState(0);

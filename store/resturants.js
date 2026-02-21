@@ -108,7 +108,7 @@ const restaurants = [
     seats: 120,
   },
 ];
- const discounts = [
+const discounts = [
   {
     name: "Golden Spoon Bistro",
     seats: 60,
@@ -414,4 +414,4 @@ const slots = [
   },
 ];
 
-export { restaurants, carouselImages, slots,discounts };
+export { restaurants, carouselImages, slots, discounts };
