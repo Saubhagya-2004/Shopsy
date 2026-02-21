@@ -1,5 +1,9 @@
+import { db } from "@/config/firebaseconfig";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BlurView } from "expo-blur";
 import { ImageBackground } from "expo-image";
+import { useRouter } from "expo-router";
+import { collection, getDocs, query } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -13,16 +17,13 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { db } from "@/config/firebaseconfig";
-import { useRouter } from "expo-router";
-import { collection, getDocs, query } from "firebase/firestore";
 import { discounts } from "../../store/resturants";
 
 const background = require("../../assets/images/background.png");
 const CARD_WIDTH = 176 + 16; // w-44 (176px) + mr-4 (16px)
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Restaurant = { id: string; [key: string]: any };
+type Restaurant = { id: string;[key: string]: any };
 
 // ─── Arrow Button ─────────────────────────────────────────────────────────────
 const ArrowButton = ({
@@ -38,11 +39,10 @@ const ArrowButton = ({
     onPress={onPress}
     disabled={disabled}
     activeOpacity={0.7}
-    className={`w-12 h-12 rounded-full items-center justify-center border-2 ${
-      disabled
-        ? "bg-stone-300/50 border-stone-300"
-        : "bg-slate-800 border-amber-400"
-    }`}
+    className={`w-12 h-12 rounded-full items-center justify-center border-2 ${disabled
+      ? "bg-stone-300/50 border-stone-300"
+      : "bg-slate-800 border-amber-400"
+      }`}
     style={{
       elevation: disabled ? 0 : 4,
       shadowColor: "#000",
@@ -52,9 +52,8 @@ const ArrowButton = ({
     }}
   >
     <Text
-      className={`text-xl font-bold leading-none ${
-        disabled ? "text-stone-400" : "text-amber-400"
-      }`}
+      className={`text-xl font-bold leading-none ${disabled ? "text-stone-400" : "text-amber-400"
+        }`}
       style={{ marginTop: -1 }}
     >
       {direction === "left" ? "‹" : "›"}
@@ -87,6 +86,7 @@ const SectionHeader = ({
 
 // ─── Home Screen ──────────────────────────────────────────────────────────────
 export default function Home() {
+  const [userName, setUserName] = useState<string | null>(null);
   const router = useRouter();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(false);
@@ -94,6 +94,14 @@ export default function Home() {
   const discountRef = useRef<FlatList<any>>(null);
   const [restIndex, setRestIndex] = useState(0);
   const [discIndex, setDiscIndex] = useState(0);
+
+  useEffect(() => {
+    const getUserName = async () => {
+      const name = await AsyncStorage.getItem("userName");
+      setUserName(name);
+    };
+    getUserName();
+  }, []);
 
   // ── Scroll helper ─────────────────────────────────────────────────────────
   const scrollList = (
@@ -212,11 +220,18 @@ export default function Home() {
 
       {/* Header */}
       <View className="items-center pt-2">
-        <View className="bg-slate-800 border border-amber-500 w-11/12 rounded-2xl shadow-xl p-6 items-center justify-center flex-row gap-3">
-          <Text className="text-white text-lg font-medium">Welcome To</Text>
-          <Text className="text-[#ffd700] text-2xl font-bold">
-            Dine Time 🍽
-          </Text>
+        <View className="bg-slate-800 border border-amber-500 w-11/12 rounded-2xl shadow-xl p-6 items-center justify-center">
+          {userName && (
+            <Text className="text-amber-300 text-base font-semibold mb-1">
+              Hi, {userName} 👋
+            </Text>
+          )}
+          <View className="flex-row gap-3 items-center">
+            <Text className="text-white text-lg font-medium">Welcome To</Text>
+            <Text className="text-[#ffd700] text-2xl font-bold">
+              Dine Time 🍽
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -285,7 +300,7 @@ export default function Home() {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: 16 }}
-              onScrollToIndexFailed={() => {}}
+              onScrollToIndexFailed={() => { }}
               onMomentumScrollEnd={(e) => {
                 const index = Math.round(
                   e.nativeEvent.contentOffset.x / CARD_WIDTH
@@ -317,7 +332,7 @@ export default function Home() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 16 }}
-          onScrollToIndexFailed={() => {}}
+          onScrollToIndexFailed={() => { }}
           onMomentumScrollEnd={(e) => {
             const index = Math.round(
               e.nativeEvent.contentOffset.x / CARD_WIDTH

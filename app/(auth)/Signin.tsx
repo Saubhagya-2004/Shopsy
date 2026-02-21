@@ -1,27 +1,76 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc, getFirestore } from "firebase/firestore";
 import { Formik } from "formik";
 import React, { useState } from "react";
 import {
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import validationScema from "../utils/authSchema";
+import * as Yup from "yup";
+import { app } from "../../config/firebaseconfig";
+
+const signinSchema = Yup.object().shape({
+  email: Yup.string().required("Email is required !!").email("Email is invalid"),
+  password: Yup.string().required("Password is required !!").min(6, "Password must be at least 6 characters"),
+});
+
 const btnimg = require("./../../assets/images/buttom.png");
 const logo = require("./../../assets/images/dine-time.png");
 
 export default function Signup() {
   const router = useRouter();
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
-  const handleSubmitForm = () => {
-    router.push("/Home");
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const handleSubmitForm = async (values: any) => {
+    try {
+      const usercredential = await signInWithEmailAndPassword(
+        auth,
+        values.email,
+        values.password,
+      );
+      const user = usercredential.user;
+      const userDoc = await getDoc(doc(db, "users", user.uid),);
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        console.log("user data", userData)
+        await AsyncStorage.setItem("userEmail", values.email);
+        // if (userData?.userName) {
+        //   await AsyncStorage.setItem("userName", userData.userName);
+        // }
+        router.push("/Home");
+      } else {
+        console.log('No Such Doc')
+      }
+    } catch (error: any) {
+      let message = "Something went wrong. Please try again.";
+
+      if (error.code === "auth/invalid-credential") {
+        message = "Incorrect Credentials. Please try again.";
+      } else if (error.code === "auth/invalid-email") {
+        message = "Invalid email format.";
+      }
+
+      Alert.alert(
+        "LogIn Failed",
+        message,
+        [{ text: "OK", style: "default" }],
+        { cancelable: true },
+      );
+
+      console.log("Signup Error:", error);
+    }
   };
 
   return (
@@ -63,7 +112,7 @@ export default function Signup() {
               <Formik
                 initialValues={{ email: "", password: "" }}
                 onSubmit={handleSubmitForm}
-                validationSchema={validationScema}
+                validationSchema={signinSchema}
               >
                 {({
                   values,
@@ -79,11 +128,10 @@ export default function Signup() {
                       Email
                     </Text>
                     <TextInput
-                      className={`border border-slate-800 rounded-3xl px-4 py-3 hover:ring-2 ${
-                        focusedInput === "email"
-                          ? "border-cyan-400 border"
-                          : "border-slate-800"
-                      }`}
+                      className={`border border-slate-800 rounded-3xl px-4 py-3 hover:ring-2 ${focusedInput === "email"
+                        ? "border-cyan-400 border"
+                        : "border-slate-800"
+                        }`}
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -102,11 +150,10 @@ export default function Signup() {
                       Password
                     </Text>
                     <TextInput
-                      className={`border border-slate-800 rounded-3xl px-4 py-3 hover:ring-2 ${
-                        focusedInput === "password"
-                          ? "border-cyan-400 border"
-                          : "border-slate-800"
-                      }`}
+                      className={`border border-slate-800 rounded-3xl px-4 py-3 hover:ring-2 ${focusedInput === "password"
+                        ? "border-cyan-400 border"
+                        : "border-slate-800"
+                        }`}
                       secureTextEntry={true}
                       autoCapitalize="none"
                       autoCorrect={false}
