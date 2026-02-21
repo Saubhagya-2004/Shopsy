@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { Formik } from "formik";
 import React, { useState } from "react";
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -16,12 +17,51 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import validationScema from "../utils/authSchema";
 const btnimg = require("./../../assets/images/buttom.png");
 const logo = require("./../../assets/images/dine-time.png");
-
+import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
+import { doc, getFirestore, setDoc } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function Signup() {
   const router = useRouter();
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
-  const handleSubmitForm = () => {
-    router.push("/Home");
+  const auth = getAuth();
+  const db = getFirestore();
+  const handleSubmitForm = async (values: any) => {
+    try {
+      const usercredential = await createUserWithEmailAndPassword(
+        auth,
+        values.email,
+        values.password,
+      );
+      const user = usercredential.user;
+      await setDoc(doc(db, "users", user.uid), {
+        userName: values.userName,
+        email: values.email,
+        userId: user.uid,
+        createdAt: Date.now(),
+      });
+      await AsyncStorage.setItem("userEmail", values.email);
+      router.push("/Home");
+      console.log(user, AsyncStorage.getItem("userEmail"));
+    } catch (error: any) {
+      let message = "Something went wrong. Please try again.";
+
+      if (error.code === "auth/email-already-in-use") {
+        message = "This email is already registered. Try logging in instead.";
+      } else if (error.code === "auth/invalid-email") {
+        message = "Invalid email format.";
+      } else if (error.code === "auth/weak-password") {
+        message = "Password should be at least 6 characters.";
+      }
+
+      Alert.alert(
+        "Signup Failed",
+        message,
+        [{ text: "OK", style: "default" }],
+        { cancelable: true },
+      );
+
+      console.log("Signup Error:", error);
+    }
   };
 
   return (

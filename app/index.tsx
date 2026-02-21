@@ -49,7 +49,7 @@ export default function index() {
         </Text>
         <TouchableOpacity
           className="flex flex-row item-center justify-center "
-          onPress={() => router.push("/")}
+          onPress={() => router.push("/Signin")}
         >
           <Text className="text-slate-800 font-semibold">
             Already a User ?{" "}

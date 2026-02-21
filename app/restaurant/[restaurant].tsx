@@ -59,12 +59,12 @@ export default function RestaurantDetail() {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const carouselRef = useRef<FlatList>(null);
-  
+
   // Date States
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDateModal, setShowDateModal] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
-  
+
   // Guest count state (1-12)
   const [guestCount, setGuestCount] = useState(2);
 
@@ -222,7 +222,11 @@ export default function RestaurantDetail() {
 
   return (
     <>
-      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="light-content"
+      />
 
       <ScrollView
         className="flex-1 bg-[#d1bea7]"
@@ -271,7 +275,10 @@ export default function RestaurantDetail() {
                   <TouchableOpacity
                     key={i}
                     onPress={() => {
-                      carouselRef.current?.scrollToIndex({ index: i, animated: true });
+                      carouselRef.current?.scrollToIndex({
+                        index: i,
+                        animated: true,
+                      });
                       setActiveSlide(i);
                     }}
                     className={`rounded-full ${
@@ -389,9 +396,24 @@ export default function RestaurantDetail() {
           <View className="mt-6 px-4">
             <View className="flex-row items-center gap-3 mb-4">
               <View className="w-1 h-6 bg-orange-400 rounded-full" />
-              <Text className="text-lg font-bold text-slate-800">
-                🕐 Available Slots
-              </Text>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#1e293b",
+                  padding: 12,
+                  borderRadius: 10,
+                  marginBottom: 16,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#fb923c",
+                    textAlign: "center",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Find Available Slots
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {/* Date Selector Button */}
@@ -444,21 +466,23 @@ export default function RestaurantDetail() {
                     Number of Guests
                   </Text>
                 </View>
-                
+
                 <View className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
                   <View className="flex-row items-center justify-between">
                     <TouchableOpacity
                       onPress={decrementGuests}
                       disabled={guestCount <= 1}
                       className={`w-12 h-12 rounded-full items-center justify-center
-                        ${guestCount <= 1 
-                          ? "bg-slate-100" 
-                          : "bg-slate-800 border border-orange-400"}`}
+                        ${
+                          guestCount <= 1
+                            ? "bg-slate-100"
+                            : "bg-slate-800 border border-orange-400"
+                        }`}
                     >
-                      <Ionicons 
-                        name="remove" 
-                        size={24} 
-                        color={guestCount <= 1 ? "#94a3b8" : "#fb923c"} 
+                      <Ionicons
+                        name="remove"
+                        size={24}
+                        color={guestCount <= 1 ? "#94a3b8" : "#fb923c"}
                       />
                     </TouchableOpacity>
 
@@ -475,14 +499,16 @@ export default function RestaurantDetail() {
                       onPress={incrementGuests}
                       disabled={guestCount >= 12}
                       className={`w-12 h-12 rounded-full items-center justify-center
-                        ${guestCount >= 12 
-                          ? "bg-slate-100" 
-                          : "bg-slate-800 border border-orange-400"}`}
+                        ${
+                          guestCount >= 12
+                            ? "bg-slate-100"
+                            : "bg-slate-800 border border-orange-400"
+                        }`}
                     >
-                      <Ionicons 
-                        name="add" 
-                        size={24} 
-                        color={guestCount >= 12 ? "#94a3b8" : "#fb923c"} 
+                      <Ionicons
+                        name="add"
+                        size={24}
+                        color={guestCount >= 12 ? "#94a3b8" : "#fb923c"}
                       />
                     </TouchableOpacity>
                   </View>
@@ -505,7 +531,8 @@ export default function RestaurantDetail() {
               >
                 <Ionicons name="calendar-outline" size={20} color="#fb923c" />
                 <Text className="text-orange-400 text-base font-bold">
-                  Book for {guestCount} {guestCount === 1 ? "guest" : "guests"} at {selectedSlot}
+                  Book for {guestCount} {guestCount === 1 ? "guest" : "guests"}{" "}
+                  at {selectedSlot}
                 </Text>
               </TouchableOpacity>
             )}
@@ -527,13 +554,15 @@ export default function RestaurantDetail() {
         <View className="flex-1 justify-end bg-black/50">
           <View className="bg-white rounded-t-3xl p-5">
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-lg font-bold text-slate-800">Select Date</Text>
+              <Text className="text-lg font-bold text-slate-800">
+                Select Date
+              </Text>
               <TouchableOpacity onPress={handleDateCancel}>
                 <Ionicons name="close" size={24} color="#64748b" />
               </TouchableOpacity>
             </View>
 
-            {Platform.OS === 'ios' ? (
+            {Platform.OS === "ios" ? (
               <View className="py-2">
                 <DateTimePicker
                   value={tempDate}
@@ -560,19 +589,23 @@ export default function RestaurantDetail() {
               />
             )}
 
-            {Platform.OS === 'ios' && (
+            {Platform.OS === "ios" && (
               <View className="flex-row gap-3 mt-4">
                 <TouchableOpacity
                   onPress={handleDateCancel}
                   className="flex-1 py-3 rounded-xl bg-slate-200"
                 >
-                  <Text className="text-slate-700 text-center font-semibold">Cancel</Text>
+                  <Text className="text-slate-700 text-center font-semibold">
+                    Cancel
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleDateConfirm}
                   className="flex-1 py-3 rounded-xl bg-slate-800"
                 >
-                  <Text className="text-orange-400 text-center font-semibold">Confirm</Text>
+                  <Text className="text-orange-400 text-center font-semibold">
+                    Confirm
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -582,11 +615,14 @@ export default function RestaurantDetail() {
 
       {/* Success Toast */}
       {showSuccess && (
-        <View className="absolute bottom-10 left-4 right-4 bg-green-600 py-3.5 px-5
-          rounded-2xl flex-row items-center gap-3 z-50 shadow-xl">
+        <View
+          className="absolute bottom-10 left-4 right-4 bg-green-600 py-3.5 px-5
+          rounded-2xl flex-row items-center gap-3 z-50 shadow-xl"
+        >
           <Ionicons name="checkmark-circle" size={22} color="#fff" />
           <Text className="text-white font-semibold text-sm flex-1">
-             {guestCount} {guestCount === 1 ? "guest" : "guests"} booked for {selectedSlot} on {formatDate(selectedDate)}!
+            {guestCount} {guestCount === 1 ? "guest" : "guests"} booked for{" "}
+            {selectedSlot} on {formatDate(selectedDate)}!
           </Text>
         </View>
       )}
