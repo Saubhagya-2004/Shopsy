@@ -1,27 +1,29 @@
+import { db } from "@/config/firebaseconfig";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { addDoc, collection, doc, getDoc } from "firebase/firestore";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   FlatList,
   Image,
   Linking,
+  Modal,
   Platform,
   ScrollView,
+  StatusBar,
   Text,
   TouchableOpacity,
   View,
-  StatusBar,
-  Modal,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/config/firebaseconfig";
-import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import {
-  restaurants as localRestaurants,
   carouselImages,
+  restaurants as localRestaurants,
   slots,
 } from "../../store/resturants";
 
@@ -177,11 +179,11 @@ export default function RestaurantDetail() {
   };
 
   // ── Booking ───────────────────────────────────────────────────────────────
-  const handleBook = () => {
-    if (!selectedSlot) return;
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
-  };
+  // const handleBook = () => {
+  //   if (!selectedSlot) return;
+  //   setShowSuccess(true);
+  //   setTimeout(() => setShowSuccess(false), 3000);
+  // };
 
   // ── Date formatting ───────────────────────────────────────────────────────
   const formatDate = (date: Date) => {
@@ -197,6 +199,35 @@ export default function RestaurantDetail() {
   const handleDateConfirm = () => {
     setSelectedDate(tempDate);
     setShowDateModal(false);
+  };
+  const handlebooking = async () => {
+    if (!selectedSlot) return;
+
+    const userEmail = await AsyncStorage.getItem("userEmail");
+
+    if (!userEmail) {
+      Alert.alert("Please login first");
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "bookings"), {
+        email: userEmail,
+        slot: selectedSlot,
+        date: selectedDate.toISOString(),
+        restaurantName: data.name,
+        guests: guestCount,
+      });
+      console.log(data.name);
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setSelectedSlot(null);
+      }, 3000);
+    } catch (error) {
+      console.log("Firestore Error:", error);
+    Alert.alert("Booking Failed. Check console.");
+    }
   };
 
   const handleDateCancel = () => {
@@ -524,7 +555,10 @@ export default function RestaurantDetail() {
             {/* Book Button */}
             {selectedSlot && (
               <TouchableOpacity
-                onPress={handleBook}
+                onPress={async () => {
+                  await handlebooking();
+                 
+                }}
                 activeOpacity={0.85}
                 className="mt-6 bg-slate-800 rounded-2xl py-4 border-2 border-orange-400
                   flex-row items-center justify-center gap-2 shadow-lg"
