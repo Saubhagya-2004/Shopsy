@@ -10,10 +10,16 @@ import {
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 const logo = require("../assets/images/dine-time.png");
 const btnimg = require("../assets/images/buttom.png");
 export default function index() {
   const router = useRouter();
+  const handleguest = async()=>{
+    await AsyncStorage.setItem("isguest", "true");
+    router.push("/Home");
+    console.log("welcome guest")
+  }
   return (
     <SafeAreaView className="bg-[#e5d7c7]">
       <StatusBar backgroundColor="bg-[#e5d7c7]" barStyle={"light-content"} />
@@ -36,7 +42,7 @@ export default function index() {
           </TouchableOpacity>
           <TouchableOpacity
             className="p-2 my-2 bg-orange-200  border border-stone-800 rounded-xl"
-            onPress={() => router.push("/Home")}
+            onPress={handleguest}
           >
             <Text className="text-xl text-center font-semibold text-stone-800">
               Guest User
