@@ -1,4 +1,7 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
+import { doc, getFirestore, setDoc } from "firebase/firestore";
 import { Formik } from "formik";
 import React, { useState } from "react";
 import {
@@ -17,9 +20,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import validationScema from "../utils/authSchema";
 const btnimg = require("./../../assets/images/buttom.png");
 const logo = require("./../../assets/images/dine-time.png");
-import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
-import { doc, getFirestore, setDoc } from "firebase/firestore";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function Signup() {
   const router = useRouter();
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
@@ -40,6 +40,7 @@ export default function Signup() {
         createdAt: Date.now(),
       });
       await AsyncStorage.setItem("userEmail", values.email);
+      await AsyncStorage.setItem("userName", values.userName);
       router.push("/Home");
       console.log(user, AsyncStorage.getItem("userEmail"));
     } catch (error: any) {
@@ -119,11 +120,10 @@ export default function Signup() {
                       Email
                     </Text>
                     <TextInput
-                      className={`border border-slate-800 rounded-3xl px-4 py-3 hover:ring-2 ${
-                        focusedInput === "email"
+                      className={`border border-slate-800 rounded-3xl px-4 py-3 hover:ring-2 ${focusedInput === "email"
                           ? "border-cyan-400 border"
                           : "border-slate-800"
-                      }`}
+                        }`}
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -142,11 +142,10 @@ export default function Signup() {
                       Password
                     </Text>
                     <TextInput
-                      className={`border border-slate-800 rounded-3xl px-4 py-3 hover:ring-2 ${
-                        focusedInput === "password"
+                      className={`border border-slate-800 rounded-3xl px-4 py-3 hover:ring-2 ${focusedInput === "password"
                           ? "border-cyan-400 border"
                           : "border-slate-800"
-                      }`}
+                        }`}
                       secureTextEntry={true}
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -166,11 +165,10 @@ export default function Signup() {
                       userName
                     </Text>
                     <TextInput
-                      className={`border border-slate-800 rounded-3xl px-4 py-3 hover:ring-2 ${
-                        focusedInput === "userName"
+                      className={`border border-slate-800 rounded-3xl px-4 py-3 hover:ring-2 ${focusedInput === "userName"
                           ? "border-cyan-400 border"
                           : "border-slate-800"
-                      }`}
+                        }`}
                       underlineColorAndroid="transparent"
                       keyboardType="default"
                       autoCapitalize="none"

@@ -46,9 +46,9 @@ export default function Signup() {
         const userData = userDoc.data();
         console.log("user data", userData)
         await AsyncStorage.setItem("userEmail", values.email);
-        // if (userData?.userName) {
-        //   await AsyncStorage.setItem("userName", userData.userName);
-        // }
+        if (userData?.userName) {
+          await AsyncStorage.setItem("userName", userData.userName);
+        }
         router.push("/Home");
       } else {
         console.log('No Such Doc')

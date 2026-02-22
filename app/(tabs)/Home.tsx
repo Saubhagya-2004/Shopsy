@@ -2,9 +2,9 @@ import { db } from "@/config/firebaseconfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BlurView } from "expo-blur";
 import { ImageBackground } from "expo-image";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { collection, getDocs, query } from "firebase/firestore";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -95,13 +95,15 @@ export default function Home() {
   const [restIndex, setRestIndex] = useState(0);
   const [discIndex, setDiscIndex] = useState(0);
 
-  useEffect(() => {
-    const getUserName = async () => {
-      const name = await AsyncStorage.getItem("userName");
-      setUserName(name);
-    };
-    getUserName();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const getUserName = async () => {
+        const name = await AsyncStorage.getItem("userName");
+        setUserName(name);
+      };
+      getUserName();
+    }, [])
+  );
 
   // ── Scroll helper ─────────────────────────────────────────────────────────
   const scrollList = (
