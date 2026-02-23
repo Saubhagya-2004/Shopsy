@@ -1,482 +1,36 @@
 import { db } from "@/config/firebaseconfig";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { addDoc, collection, doc, getDoc } from "firebase/firestore";
-import { Formik } from "formik";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Animated,
-  Dimensions,
-  FlatList,
-  Image,
-  KeyboardAvoidingView,
   Linking,
-  Modal,
   Platform,
   ScrollView,
   StatusBar,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import DatePickerModal from "../../components/restaurant/DatePickerModal";
+import GuestBookingModal from "../../components/restaurant/GuestBookingModal";
+import ImageCarousel from "../../components/restaurant/ImageCarousel";
 import {
   carouselImages,
   restaurants as localRestaurants,
   slots,
 } from "../../store/resturants";
-import validationSchema from "../utils/guestformSubmit";
-import { isPhoneVerified, saveVerifiedPhone } from "../utils/guestSession";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-
-// ─── Carousel Arrow ──────────────────────────────────────────────────────────
-const CarouselArrow = ({
-  direction,
-  onPress,
-}: {
-  direction: "left" | "right";
-  onPress: () => void;
-}) => (
-  <TouchableOpacity
-    onPress={onPress}
-    activeOpacity={0.8}
-    className="w-9 h-9 rounded-full bg-black/45 border-2 border-orange-400 items-center justify-center"
-  >
-    <Ionicons
-      name={direction === "left" ? "chevron-back" : "chevron-forward"}
-      size={18}
-      color="#fb923c"
-    />
-  </TouchableOpacity>
-);
-
-// ─── Guest Booking Modal with OTP ───────────────────────────────────────────
-const GuestBookingModal = ({
-  visible,
-  onClose,
-  onSubmit,
-  selectedSlot,
-  selectedDate,
-  guestCount,
-  restaurantName,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  onSubmit: (values: any) => void;
-  selectedSlot: string | null;
-  selectedDate: Date;
-  guestCount: number;
-  restaurantName?: string;
-}) => {
-  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-
-  // OTP state
-  const [otpStep, setOtpStep] = useState<"details" | "otp">("details");
-  const [otpCode, setOtpCode] = useState("");
-  const [confirmResult, setConfirmResult] = useState<any>(null);
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [verifyLoading, setVerifyLoading] = useState(false);
-  const [resendTimer, setResendTimer] = useState(0);
-  const [pendingValues, setPendingValues] = useState<any>(null);
-  const timerRef = useRef<any>(null);
-
-  useEffect(() => {
-    if (visible) {
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        damping: 20,
-        stiffness: 200,
-      }).start();
-    } else {
-      Animated.timing(slideAnim, {
-        toValue: SCREEN_HEIGHT,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [visible]);
-
-  // Reset state when modal closes
-  useEffect(() => {
-    if (!visible) {
-      setOtpStep("details");
-      setOtpCode("");
-      setConfirmResult(null);
-      setOtpLoading(false);
-      setVerifyLoading(false);
-      setPendingValues(null);
-      if (timerRef.current) clearInterval(timerRef.current);
-      setResendTimer(0);
-    }
-  }, [visible]);
-
-  // Countdown timer for OTP resend
-  useEffect(() => {
-    if (resendTimer > 0) {
-      timerRef.current = setInterval(() => {
-        setResendTimer((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timerRef.current);
-    }
-  }, [resendTimer]);
-
-  const formatDate = (date: Date) =>
-    date.toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    });
-
-  const formatPhone = (phone: string) => {
-    const cleaned = phone.replace(/\D/g, "");
-    if (cleaned.startsWith("91") && cleaned.length > 10) return `+${cleaned}`;
-    return `+91${cleaned}`;
-  };
-
-  // Generate a random 6-digit OTP
-  const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
-
-  // Step 1: Send OTP or skip if already verified
-  const handleSendOTP = async (values: any) => {
-    const phone = formatPhone(values.mobileNumber);
-    setPendingValues(values);
-
-    // Check if phone was already verified within 24hr window
-    const verified = await isPhoneVerified(phone);
-    if (verified) {
-      onSubmit(values);
-      return;
-    }
-
-    setOtpLoading(true);
-    try {
-      const otp = generateOTP();
-      setConfirmResult(otp); // store generated OTP for verification
-      setOtpStep("otp");
-      setResendTimer(60);
-      // Show OTP in alert for development — replace with real SMS service in production
-      Alert.alert("OTP Sent", `Your verification code is: ${otp}\n\nSent to ${phone}`);
-    } catch (error: any) {
-      console.log("OTP Send Error:", error);
-      Alert.alert("OTP Error", "Failed to send OTP. Please try again.");
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  // Step 2: Verify OTP code
-  const handleVerifyOTP = async () => {
-    if (!confirmResult || otpCode.length !== 6) {
-      Alert.alert("Invalid OTP", "Please enter the 6-digit code.");
-      return;
-    }
-    setVerifyLoading(true);
-    try {
-      if (otpCode === confirmResult) {
-        const phone = formatPhone(pendingValues.mobileNumber);
-        await saveVerifiedPhone(phone);
-        onSubmit(pendingValues);
-      } else {
-        Alert.alert("Verification Failed", "Invalid OTP. Please try again.");
-      }
-    } catch (error: any) {
-      console.log("OTP Verify Error:", error);
-      Alert.alert("Verification Failed", "Something went wrong. Please try again.");
-    } finally {
-      setVerifyLoading(false);
-    }
-  };
-
-  const handleResendOTP = async () => {
-    if (resendTimer > 0 || !pendingValues) return;
-    await handleSendOTP(pendingValues);
-  };
-
-  return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
-      <TouchableOpacity
-        activeOpacity={1}
-        onPress={onClose}
-        className="flex-1 bg-black/70 justify-end"
-      >
-        <TouchableOpacity activeOpacity={1}>
-          <Animated.View
-            style={{ transform: [{ translateY: slideAnim }] }}
-            className="bg-slate-950 rounded-t-3xl border-t-2 border-l border-r border-orange-400 pb-10 overflow-hidden"
-          >
-            {/* Orange accent bar */}
-            <View className="h-0.5 bg-orange-400" />
-
-            {/* Header */}
-            <View className="px-6 pt-5 pb-4 flex-row items-center justify-between border-b border-orange-400/15">
-              <View>
-                <Text className="text-orange-400 text-xs font-bold tracking-widest uppercase">
-                  {otpStep === "details" ? "Guest Checkout" : "Verify Phone"}
-                </Text>
-                <Text className="text-slate-50 text-xl font-extrabold mt-0.5">
-                  {otpStep === "details" ? "Complete Booking" : "Enter OTP"}
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={onClose}
-                className="w-9 h-9 rounded-full bg-orange-400/10 border border-orange-400/30 items-center justify-center"
-              >
-                <Ionicons name="close" size={18} color="#fb923c" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Reservation Summary Card */}
-            <View className="mx-6 mt-4 bg-orange-400/5 rounded-2xl border border-orange-400/20 p-4">
-              <Text className="text-orange-400 text-xs font-bold tracking-widest uppercase mb-3">
-                Reservation Summary
-              </Text>
-              <View className="flex-row items-center justify-between mb-2">
-                <View className="flex-row items-center gap-2">
-                  <View className="w-6 h-6 rounded-md bg-orange-400/15 items-center justify-center">
-                    <Text className="text-xs">🍽️</Text>
-                  </View>
-                  <Text className="text-slate-400 text-sm">Restaurant</Text>
-                </View>
-                <Text className="text-slate-50 text-sm font-semibold" numberOfLines={1}>
-                  {restaurantName || "—"}
-                </Text>
-              </View>
-              <View className="flex-row items-center justify-between mb-2">
-                <View className="flex-row items-center gap-2">
-                  <View className="w-6 h-6 rounded-md bg-orange-400/15 items-center justify-center">
-                    <Text className="text-xs">📅</Text>
-                  </View>
-                  <Text className="text-slate-400 text-sm">Date</Text>
-                </View>
-                <Text className="text-slate-50 text-sm font-semibold">
-                  {formatDate(selectedDate)}
-                </Text>
-              </View>
-              <View className="flex-row items-center justify-between mb-2">
-                <View className="flex-row items-center gap-2">
-                  <View className="w-6 h-6 rounded-md bg-orange-400/15 items-center justify-center">
-                    <Text className="text-xs">🕐</Text>
-                  </View>
-                  <Text className="text-slate-400 text-sm">Time</Text>
-                </View>
-                <Text className="text-orange-400 text-sm font-bold">{selectedSlot}</Text>
-              </View>
-              <View className="h-px bg-orange-400/15 my-2" />
-              <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center gap-2">
-                  <View className="w-6 h-6 rounded-md bg-orange-400/15 items-center justify-center">
-                    <Text className="text-xs">👥</Text>
-                  </View>
-                  <Text className="text-slate-400 text-sm">Guests</Text>
-                </View>
-                <Text className="text-slate-50 text-sm font-semibold">
-                  {guestCount} {guestCount === 1 ? "Guest" : "Guests"}
-                </Text>
-              </View>
-            </View>
-
-            {/* ── Step 1: Name + Phone + Send OTP ── */}
-            {otpStep === "details" && (
-              <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-                <Formik
-                  initialValues={{ fullName: "", mobileNumber: "" }}
-                  validationSchema={validationSchema}
-                  onSubmit={handleSendOTP}
-                >
-                  {({ values, handleBlur, handleChange, handleSubmit, touched, errors }) => (
-                    <View className="px-6 pt-5">
-                      <Text className="text-orange-400 text-xs font-bold tracking-widest uppercase mb-3">
-                        Your Details
-                      </Text>
-
-                      {/* Full Name */}
-                      <View className="mb-3">
-                        <Text className="text-slate-400 text-xs font-semibold mb-1.5 tracking-wide">
-                          Full Name
-                        </Text>
-                        <View
-                          className={`flex-row items-center bg-white/5 rounded-xl px-3.5 h-12 gap-2.5 border ${touched.fullName && errors.fullName
-                            ? "border-red-500"
-                            : "border-orange-400/25"
-                            }`}
-                        >
-                          <Ionicons name="person-outline" size={16} color="#64748b" />
-                          <TextInput
-                            value={values.fullName}
-                            onChangeText={handleChange("fullName")}
-                            onBlur={handleBlur("fullName")}
-                            placeholder="John Doe"
-                            placeholderTextColor="#475569"
-                            className="flex-1 text-slate-50 text-sm"
-                          />
-                        </View>
-                        {touched.fullName && errors.fullName && (
-                          <Text className="text-red-500 text-xs mt-1 ml-1">{errors.fullName}</Text>
-                        )}
-                      </View>
-
-                      {/* Mobile Number */}
-                      <View className="mb-3">
-                        <Text className="text-slate-400 text-xs font-semibold mb-1.5 tracking-wide">
-                          Mobile Number
-                        </Text>
-                        <View
-                          className={`flex-row items-center bg-white/5 rounded-xl px-3.5 h-12 gap-2.5 border ${touched.mobileNumber && errors.mobileNumber
-                            ? "border-red-500"
-                            : "border-orange-400/25"
-                            }`}
-                        >
-                          <Ionicons name="call-outline" size={16} color="#64748b" />
-                          <Text className="text-slate-400 text-sm font-medium">+91</Text>
-                          <TextInput
-                            value={values.mobileNumber}
-                            onChangeText={handleChange("mobileNumber")}
-                            onBlur={handleBlur("mobileNumber")}
-                            placeholder="9876543210"
-                            placeholderTextColor="#475569"
-                            keyboardType="phone-pad"
-                            maxLength={10}
-                            className="flex-1 text-slate-50 text-sm"
-                          />
-                        </View>
-                        {touched.mobileNumber && errors.mobileNumber && (
-                          <Text className="text-red-500 text-xs mt-1 ml-1">{errors.mobileNumber}</Text>
-                        )}
-                      </View>
-
-                      {/* Send OTP Button */}
-                      <TouchableOpacity
-                        onPress={() => handleSubmit()}
-                        activeOpacity={0.85}
-                        disabled={otpLoading}
-                        className={`rounded-2xl h-14 flex-row items-center justify-center gap-2 ${otpLoading ? "bg-orange-400/50" : "bg-orange-400"
-                          }`}
-                      >
-                        {otpLoading ? (
-                          <ActivityIndicator color="#0f172a" />
-                        ) : (
-                          <>
-                            <Ionicons name="phone-portrait-outline" size={20} color="#0f172a" />
-                            <Text className="text-slate-950 text-base font-extrabold tracking-wide">
-                              Send OTP & Verify
-                            </Text>
-                          </>
-                        )}
-                      </TouchableOpacity>
-
-                      <Text className="text-slate-500 text-xs text-center mt-3">
-                        We'll send a verification code to your phone
-                      </Text>
-                    </View>
-                  )}
-                </Formik>
-              </KeyboardAvoidingView>
-            )}
-
-            {/* ── Step 2: OTP Input + Verify & Book ── */}
-            {otpStep === "otp" && (
-              <View className="px-6 pt-5">
-                <Text className="text-orange-400 text-xs font-bold tracking-widest uppercase mb-3">
-                  Verify Your Phone
-                </Text>
-                <Text className="text-slate-400 text-sm mb-4">
-                  Enter the 6-digit code sent to{" "}
-                  <Text className="text-orange-400 font-bold">
-                    +91 {pendingValues?.mobileNumber}
-                  </Text>
-                </Text>
-
-                {/* OTP Input */}
-                <View className="flex-row items-center bg-white/5 rounded-xl px-3.5 h-14 gap-2.5 border border-orange-400/25 mb-4">
-                  <Ionicons name="keypad-outline" size={18} color="#fb923c" />
-                  <TextInput
-                    value={otpCode}
-                    onChangeText={setOtpCode}
-                    placeholder="Enter 6-digit OTP"
-                    placeholderTextColor="#475569"
-                    keyboardType="number-pad"
-                    maxLength={6}
-                    className="flex-1 text-slate-50 text-lg font-bold tracking-[8px]"
-                    autoFocus
-                  />
-                </View>
-
-                {/* Verify & Book */}
-                <TouchableOpacity
-                  onPress={handleVerifyOTP}
-                  activeOpacity={0.85}
-                  disabled={verifyLoading || otpCode.length !== 6}
-                  className={`rounded-2xl h-14 flex-row items-center justify-center gap-2 ${verifyLoading || otpCode.length !== 6
-                    ? "bg-orange-400/50"
-                    : "bg-orange-400"
-                    }`}
-                >
-                  {verifyLoading ? (
-                    <ActivityIndicator color="#0f172a" />
-                  ) : (
-                    <>
-                      <Ionicons name="checkmark-circle" size={20} color="#0f172a" />
-                      <Text className="text-slate-950 text-base font-extrabold tracking-wide">
-                        Verify & Book
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-
-                {/* Resend Row */}
-                <View className="flex-row items-center justify-center mt-4 gap-1">
-                  <Text className="text-slate-500 text-sm">Didn't receive code?</Text>
-                  {resendTimer > 0 ? (
-                    <Text className="text-slate-400 text-sm font-semibold">
-                      Resend in {resendTimer}s
-                    </Text>
-                  ) : (
-                    <TouchableOpacity onPress={handleResendOTP}>
-                      <Text className="text-orange-400 text-sm font-bold">Resend OTP</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {/* Back to details */}
-                <TouchableOpacity
-                  onPress={() => { setOtpStep("details"); setOtpCode(""); }}
-                  className="mt-3 py-2"
-                >
-                  <Text className="text-slate-500 text-xs text-center underline">
-                    ← Change phone number
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </Animated.View>
-        </TouchableOpacity>
-      </TouchableOpacity>
-    </Modal>
-  );
-};
-
-// ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function RestaurantDetail() {
   const { restaurant } = useLocalSearchParams();
   const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeSlide, setActiveSlide] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
-  const carouselRef = useRef<FlatList>(null);
   const [modalvisible, setModalvisible] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -484,6 +38,7 @@ export default function RestaurantDetail() {
   const [tempDate, setTempDate] = useState(new Date());
   const [guestCount, setGuestCount] = useState(2);
 
+  // ─── Fetch restaurant data ───────────────────────────────────────────────
   useEffect(() => {
     const fetchRestaurant = async () => {
       try {
@@ -499,6 +54,7 @@ export default function RestaurantDetail() {
     if (restaurant) fetchRestaurant();
   }, [restaurant]);
 
+  // ─── Derived data ────────────────────────────────────────────────────────
   const matchIndex = data
     ? (localRestaurants as any[]).findIndex((r: any) => r.name === data.name)
     : -1;
@@ -511,40 +67,7 @@ export default function RestaurantDetail() {
       ? (slots[matchIndex] as any).slot
       : [];
 
-  useEffect(() => {
-    if (images.length <= 1) return;
-    const timer = setInterval(() => {
-      setActiveSlide((prev) => {
-        const next = (prev + 1) % images.length;
-        carouselRef.current?.scrollToIndex({ index: next, animated: true });
-        return next;
-      });
-    }, 3000);
-    return () => clearInterval(timer);
-  }, [images.length]);
-
-  const goToPrev = useCallback(() => {
-    setActiveSlide((prev) => {
-      const next = prev === 0 ? images.length - 1 : prev - 1;
-      carouselRef.current?.scrollToIndex({ index: next, animated: true });
-      return next;
-    });
-  }, [images.length]);
-
-  const goToNext = useCallback(() => {
-    setActiveSlide((prev) => {
-      const next = (prev + 1) % images.length;
-      carouselRef.current?.scrollToIndex({ index: next, animated: true });
-      return next;
-    });
-  }, [images.length]);
-
-  const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
-    if (viewableItems.length > 0) setActiveSlide(viewableItems[0].index ?? 0);
-  }, []);
-
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
-
+  // ─── Helpers ─────────────────────────────────────────────────────────────
   const formatDate = (date: Date) =>
     date.toLocaleDateString("en-US", {
       weekday: "short",
@@ -581,6 +104,7 @@ export default function RestaurantDetail() {
       .catch(() => Linking.openURL(webFallback));
   };
 
+  // ─── Booking handlers ────────────────────────────────────────────────────
   const handlebooking = async () => {
     if (!selectedSlot) return;
     const userEmail = await AsyncStorage.getItem("userEmail");
@@ -637,6 +161,7 @@ export default function RestaurantDetail() {
     }
   };
 
+  // ─── Loading / Error states ──────────────────────────────────────────────
   if (loading) {
     return (
       <View className="flex-1 bg-slate-950 items-center justify-center">
@@ -653,88 +178,14 @@ export default function RestaurantDetail() {
     );
   }
 
+  // ─── Render ──────────────────────────────────────────────────────────────
   return (
     <>
       <StatusBar barStyle="light-content" />
       <ScrollView className="flex-1 bg-slate-950" showsVerticalScrollIndicator={false}>
 
         {/* ── CAROUSEL ──────────────────────────────────────────────── */}
-        <View style={{ width: SCREEN_WIDTH, height: 320 }} className="bg-slate-800">
-          {images.length > 0 ? (
-            <>
-              <FlatList
-                ref={carouselRef}
-                data={images}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(_, i) => i.toString()}
-                getItemLayout={(_, i) => ({
-                  length: SCREEN_WIDTH,
-                  offset: SCREEN_WIDTH * i,
-                  index: i,
-                })}
-                onViewableItemsChanged={onViewableItemsChanged}
-                viewabilityConfig={viewabilityConfig}
-                renderItem={({ item: uri }: { item: string }) => (
-                  <Image
-                    source={{ uri }}
-                    style={{ width: SCREEN_WIDTH, height: 320 }}
-                    resizeMode="cover"
-                  />
-                )}
-              />
-
-              {images.length > 1 && (
-                <>
-                  <View className="absolute left-3 top-1/2 -translate-y-4">
-                    <CarouselArrow direction="left" onPress={goToPrev} />
-                  </View>
-                  <View className="absolute right-3 top-1/2 -translate-y-4">
-                    <CarouselArrow direction="right" onPress={goToNext} />
-                  </View>
-                </>
-              )}
-
-              {/* Dots */}
-              <View className="absolute bottom-4 self-center flex-row items-center gap-1.5">
-                {images.map((_: any, i: number) => (
-                  <TouchableOpacity
-                    key={i}
-                    onPress={() => {
-                      carouselRef.current?.scrollToIndex({ index: i, animated: true });
-                      setActiveSlide(i);
-                    }}
-                    className={`rounded-full h-2 ${i === activeSlide ? "w-5 bg-orange-400" : "w-2 bg-white/50"
-                      }`}
-                  />
-                ))}
-              </View>
-
-              {/* Counter */}
-              <View className="absolute top-4 right-4 bg-black/55 px-2.5 py-1 rounded-full">
-                <Text className="text-white text-xs font-semibold">
-                  {activeSlide + 1} / {images.length}
-                </Text>
-              </View>
-            </>
-          ) : data.image ? (
-            <Image
-              source={{ uri: data.image }}
-              style={{ width: SCREEN_WIDTH, height: 320 }}
-              resizeMode="cover"
-            />
-          ) : null}
-
-          {/* Back Button */}
-          <TouchableOpacity
-            onPress={() => router.back()}
-            activeOpacity={0.8}
-            className="absolute top-12 left-4 z-30 w-10 h-10 rounded-full bg-black/50 border-2 border-orange-400 items-center justify-center"
-          >
-            <Ionicons name="arrow-back" size={20} color="#fb923c" />
-          </TouchableOpacity>
-        </View>
+        <ImageCarousel images={images} fallbackImage={data.image} />
 
         {/* ── NAME + ADDRESS ─────────────────────────────────────────── */}
         <View className="px-5 pt-5 pb-1">
@@ -827,8 +278,8 @@ export default function RestaurantDetail() {
                     onPress={() => guestCount > 1 && setGuestCount(guestCount - 1)}
                     disabled={guestCount <= 1}
                     className={`w-11 h-11 rounded-full items-center justify-center border ${guestCount <= 1
-                      ? "bg-white/5 border-transparent"
-                      : "bg-orange-400/15 border-orange-400"
+                        ? "bg-white/5 border-transparent"
+                        : "bg-orange-400/15 border-orange-400"
                       }`}
                   >
                     <Ionicons
@@ -849,8 +300,8 @@ export default function RestaurantDetail() {
                     onPress={() => guestCount < 12 && setGuestCount(guestCount + 1)}
                     disabled={guestCount >= 12}
                     className={`w-11 h-11 rounded-full items-center justify-center border ${guestCount >= 12
-                      ? "bg-white/5 border-transparent"
-                      : "bg-orange-400/15 border-orange-400"
+                        ? "bg-white/5 border-transparent"
+                        : "bg-orange-400/15 border-orange-400"
                       }`}
                   >
                     <Ionicons
@@ -894,63 +345,17 @@ export default function RestaurantDetail() {
         restaurantName={data?.name}
       />
 
-      {/* ── DATE PICKER ──────────────────────────────────────────────── */}
-      {/* Android: native picker dialog (no wrapper needed) */}
-      {showDateModal && Platform.OS === "android" && (
-        <DateTimePicker
-          value={tempDate}
-          mode="date"
-          display="default"
-          onChange={(_, date) => {
-            setShowDateModal(false);
-            if (date) {
-              setTempDate(date);
-              setSelectedDate(date);
-            }
-          }}
-          minimumDate={new Date()}
-        />
-      )}
-
-      {/* iOS: custom modal with spinner + confirm/cancel */}
-      {Platform.OS === "ios" && (
-        <Modal
-          visible={showDateModal}
-          transparent
-          animationType="fade"
-          onRequestClose={handleDateCancel}
-        >
-          <View className="flex-1 bg-black/60 justify-center p-5">
-            <View className="bg-slate-800 rounded-3xl p-5 border border-orange-400/30">
-              <Text className="text-slate-50 text-lg font-bold mb-4 text-center">
-                Select Date
-              </Text>
-              <DateTimePicker
-                value={tempDate}
-                mode="date"
-                display="spinner"
-                onChange={(_, date) => date && setTempDate(date)}
-                minimumDate={new Date()}
-                textColor="#f8fafc"
-              />
-              <View className="flex-row gap-3 mt-4">
-                <TouchableOpacity
-                  onPress={handleDateCancel}
-                  className="flex-1 py-3 rounded-xl border border-white/15 items-center"
-                >
-                  <Text className="text-slate-400 font-semibold">Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleDateConfirm}
-                  className="flex-1 py-3 rounded-xl bg-orange-400 items-center"
-                >
-                  <Text className="text-slate-950 font-bold">Confirm</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-      )}
+      {/* ── DATE PICKER ─────────────────────────────────────────────── */}
+      <DatePickerModal
+        visible={showDateModal}
+        date={tempDate}
+        onDateChange={(date) => {
+          setTempDate(date);
+          if (Platform.OS === "android") setSelectedDate(date);
+        }}
+        onConfirm={handleDateConfirm}
+        onCancel={handleDateCancel}
+      />
 
       {/* ── SUCCESS TOAST ────────────────────────────────────────────── */}
       {showSuccess && (
