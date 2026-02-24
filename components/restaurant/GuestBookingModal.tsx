@@ -174,7 +174,7 @@ const GuestBookingModal = ({
             <TouchableOpacity
                 activeOpacity={1}
                 onPress={onClose}
-                className="flex-1 bg-black/70 justify-end"
+                style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }}
             >
                 <TouchableOpacity activeOpacity={1}>
                     <Animated.View
@@ -273,8 +273,8 @@ const GuestBookingModal = ({
                                                 </Text>
                                                 <View
                                                     className={`flex-row items-center bg-white/5 rounded-xl px-3.5 h-12 gap-2.5 border ${touched.fullName && errors.fullName
-                                                            ? "border-red-500"
-                                                            : "border-orange-400/25"
+                                                        ? "border-red-500"
+                                                        : "border-orange-400/25"
                                                         }`}
                                                 >
                                                     <Ionicons name="person-outline" size={16} color="#64748b" />
@@ -299,8 +299,8 @@ const GuestBookingModal = ({
                                                 </Text>
                                                 <View
                                                     className={`flex-row items-center bg-white/5 rounded-xl px-3.5 h-12 gap-2.5 border ${touched.mobileNumber && errors.mobileNumber
-                                                            ? "border-red-500"
-                                                            : "border-orange-400/25"
+                                                        ? "border-red-500"
+                                                        : "border-orange-400/25"
                                                         }`}
                                                 >
                                                     <Ionicons name="call-outline" size={16} color="#64748b" />
@@ -333,8 +333,8 @@ const GuestBookingModal = ({
                                                     <ActivityIndicator color="#0f172a" />
                                                 ) : (
                                                     <>
-                                                        <Ionicons name="phone-portrait-outline" size={20} color="#0f172a" />
-                                                        <Text className="text-slate-950 text-base font-extrabold tracking-wide">
+                                                        <Ionicons name="phone-portrait-outline" size={20} color="white" />
+                                                        <Text className="text-slate-950 p-4 text-base font-extrabold tracking-wide">
                                                             Send OTP & Verify
                                                         </Text>
                                                     </>
@@ -383,9 +383,9 @@ const GuestBookingModal = ({
                                     onPress={handleVerifyOTP}
                                     activeOpacity={0.85}
                                     disabled={verifyLoading || otpCode.length !== 6}
-                                    className={`rounded-2xl h-14 flex-row items-center justify-center gap-2 ${verifyLoading || otpCode.length !== 6
-                                            ? "bg-orange-400/50"
-                                            : "bg-orange-400"
+                                    className={`rounded-2xl h-14 flex-row items-center justify-center gap-2  ${verifyLoading || otpCode.length !== 6
+                                        ? "bg-orange-400/50"
+                                        : "bg-orange-400"
                                         }`}
                                 >
                                     {verifyLoading ? (
@@ -393,7 +393,7 @@ const GuestBookingModal = ({
                                     ) : (
                                         <>
                                             <Ionicons name="checkmark-circle" size={20} color="#0f172a" />
-                                            <Text className="text-slate-950 text-base font-extrabold tracking-wide">
+                                            <Text className="text-slate-950 text-base font-extrabold p-4 tracking-wide">
                                                 Verify & Book
                                             </Text>
                                         </>

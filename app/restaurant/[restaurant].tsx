@@ -278,8 +278,8 @@ export default function RestaurantDetail() {
                     onPress={() => guestCount > 1 && setGuestCount(guestCount - 1)}
                     disabled={guestCount <= 1}
                     className={`w-11 h-11 rounded-full items-center justify-center border ${guestCount <= 1
-                        ? "bg-white/5 border-transparent"
-                        : "bg-orange-400/15 border-orange-400"
+                      ? "bg-white/5 border-transparent"
+                      : "bg-orange-400/15 border-orange-400"
                       }`}
                   >
                     <Ionicons
@@ -300,8 +300,8 @@ export default function RestaurantDetail() {
                     onPress={() => guestCount < 12 && setGuestCount(guestCount + 1)}
                     disabled={guestCount >= 12}
                     className={`w-11 h-11 rounded-full items-center justify-center border ${guestCount >= 12
-                        ? "bg-white/5 border-transparent"
-                        : "bg-orange-400/15 border-orange-400"
+                      ? "bg-white/5 border-transparent"
+                      : "bg-orange-400/15 border-orange-400"
                       }`}
                   >
                     <Ionicons

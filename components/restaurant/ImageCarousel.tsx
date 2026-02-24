@@ -87,17 +87,17 @@ const ImageCarousel = ({ images, fallbackImage }: Props) => {
 
                     {images.length > 1 && (
                         <>
-                            <View className="absolute left-3 top-1/2 -translate-y-4">
+                            <View style={{ position: 'absolute', left: 12, top: '50%', marginTop: -18 ,borderColor:'orange',}}>
                                 <CarouselArrow direction="left" onPress={goToPrev} />
                             </View>
-                            <View className="absolute right-3 top-1/2 -translate-y-4">
+                            <View style={{ position: 'absolute', right: 12, top: '50%', marginTop: -18 }}>
                                 <CarouselArrow direction="right" onPress={goToNext} />
                             </View>
                         </>
                     )}
 
                     {/* Dots */}
-                    <View className="absolute bottom-4 self-center flex-row items-center gap-1.5">
+                    <View style={{ position: 'absolute', bottom: 16, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                         {images.map((_: any, i: number) => (
                             <TouchableOpacity
                                 key={i}
@@ -105,8 +105,12 @@ const ImageCarousel = ({ images, fallbackImage }: Props) => {
                                     carouselRef.current?.scrollToIndex({ index: i, animated: true });
                                     setActiveSlide(i);
                                 }}
-                                className={`rounded-full h-2 ${i === activeSlide ? "w-5 bg-orange-400" : "w-2 bg-white/50"
-                                    }`}
+                                style={{
+                                    borderRadius: 999,
+                                    height: 8,
+                                    width: i === activeSlide ? 20 : 8,
+                                    backgroundColor: i === activeSlide ? 'orange' : 'rgba(255,255,255,0.5)',
+                                }}
                             />
                         ))}
                     </View>
@@ -130,7 +134,7 @@ const ImageCarousel = ({ images, fallbackImage }: Props) => {
             <TouchableOpacity
                 onPress={() => router.back()}
                 activeOpacity={0.8}
-                className="absolute top-12 left-4 z-30 w-10 h-10 rounded-full bg-black/50 border-2 border-orange-400 items-center justify-center"
+                style={{ position: 'absolute', top: 48, left: 16, zIndex: 30, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', borderWidth: 2, borderColor: '#fb923c', alignItems: 'center', justifyContent: 'center' }}
             >
                 <Ionicons name="arrow-back" size={20} color="#fb923c" />
             </TouchableOpacity>
