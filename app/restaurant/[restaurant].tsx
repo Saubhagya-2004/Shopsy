@@ -110,31 +110,32 @@ export default function RestaurantDetail() {
     const userEmail = await AsyncStorage.getItem("userEmail");
     const guestStatus = await AsyncStorage.getItem("isguest");
 
-    if (!userEmail && guestStatus !== "true") {
-      Alert.alert("Please login first");
+    // Determine if this is a guest user
+    const isGuest = guestStatus === "true" || !userEmail || userEmail === "guest";
+
+    if (isGuest) {
+      // Guest user → open the OTP verification modal
+      setModalvisible(true);
       return;
     }
 
-    if (userEmail) {
-      try {
-        await addDoc(collection(db, "bookings"), {
-          email: userEmail,
-          slot: selectedSlot,
-          date: selectedDate.toISOString(),
-          restaurantName: data.name,
-          guests: guestCount,
-        });
-        setShowSuccess(true);
-        setTimeout(() => {
-          setShowSuccess(false);
-          setSelectedSlot(null);
-        }, 3000);
-      } catch (error) {
-        console.log("Firestore Error:", error);
-        Alert.alert("Booking Failed. Check console.");
-      }
-    } else if (guestStatus === "true") {
-      setModalvisible(true);
+    // Logged-in user → book directly
+    try {
+      await addDoc(collection(db, "bookings"), {
+        email: userEmail,
+        slot: selectedSlot,
+        date: selectedDate.toISOString(),
+        restaurantName: data.name,
+        guests: guestCount,
+      });
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setSelectedSlot(null);
+      }, 3000);
+    } catch (error) {
+      console.log("Firestore Error:", error);
+      Alert.alert("Booking Failed. Check console.");
     }
   };
 
