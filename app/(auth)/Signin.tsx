@@ -76,7 +76,7 @@ export default function Signup() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#f8f4f0]">
-      <StatusBar backgroundColor="red" barStyle="dark-content" />
+      <StatusBar backgroundColor="#f8f4f0" barStyle="dark-content" />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}

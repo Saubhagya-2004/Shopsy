@@ -94,6 +94,8 @@ export default function Home() {
   const discountRef = useRef<FlatList<any>>(null);
   const [restIndex, setRestIndex] = useState(0);
   const [discIndex, setDiscIndex] = useState(0);
+  const restIndexRef = useRef(0);
+  const discIndexRef = useRef(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -108,17 +110,19 @@ export default function Home() {
   // ── Scroll helper ─────────────────────────────────────────────────────────
   const scrollList = (
     ref: React.RefObject<FlatList<any> | null>,
-    currentIndex: number,
+    indexRef: React.MutableRefObject<number>,
     setIndex: (n: number) => void,
     dataLength: number,
     direction: "left" | "right"
   ) => {
     if (dataLength === 0) return;
+    const current = indexRef.current;
     const next =
       direction === "right"
-        ? Math.min(currentIndex + 1, dataLength - 1)
-        : Math.max(currentIndex - 1, 0);
+        ? Math.min(current + 1, dataLength - 1)
+        : Math.max(current - 1, 0);
     ref.current?.scrollToIndex({ index: next, animated: true, viewPosition: 0 });
+    indexRef.current = next;
     setIndex(next);
   };
 
@@ -277,10 +281,10 @@ export default function Home() {
         <SectionHeader
           title="Popular Restaurants 🍴"
           onLeft={() =>
-            scrollList(restaurantRef, restIndex, setRestIndex, restaurants.length, "left")
+            scrollList(restaurantRef, restIndexRef, setRestIndex, restaurants.length, "left")
           }
           onRight={() =>
-            scrollList(restaurantRef, restIndex, setRestIndex, restaurants.length, "right")
+            scrollList(restaurantRef, restIndexRef, setRestIndex, restaurants.length, "right")
           }
           canLeft={restIndex > 0}
           canRight={restIndex < restaurants.length - 1}
@@ -307,6 +311,7 @@ export default function Home() {
                 const index = Math.round(
                   e.nativeEvent.contentOffset.x / CARD_WIDTH
                 );
+                restIndexRef.current = index;
                 setRestIndex(index);
               }}
             />
@@ -317,10 +322,10 @@ export default function Home() {
         <SectionHeader
           title="Hot Deals 🔥"
           onLeft={() =>
-            scrollList(discountRef, discIndex, setDiscIndex, discounts.length, "left")
+            scrollList(discountRef, discIndexRef, setDiscIndex, discounts.length, "left")
           }
           onRight={() =>
-            scrollList(discountRef, discIndex, setDiscIndex, discounts.length, "right")
+            scrollList(discountRef, discIndexRef, setDiscIndex, discounts.length, "right")
           }
           canLeft={discIndex > 0}
           canRight={discIndex < discounts.length - 1}
@@ -339,6 +344,7 @@ export default function Home() {
             const index = Math.round(
               e.nativeEvent.contentOffset.x / CARD_WIDTH
             );
+            discIndexRef.current = index;
             setDiscIndex(index);
           }}
         />

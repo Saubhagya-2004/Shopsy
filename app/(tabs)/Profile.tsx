@@ -19,14 +19,17 @@ export default function ProfileScreen() {
   const auth = getAuth();
   const [userEmail, setUserEmail] = useState<string | null>("");
   const [userName, setUserName] = useState<string | null>("");
+  const [isGuest, setIsGuest] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
       const fetchUserData = async () => {
         const email = await AsyncStorage.getItem("userEmail");
         const name = await AsyncStorage.getItem("userName");
+        const guestFlag = await AsyncStorage.getItem("isguest");
         setUserEmail(email);
         setUserName(name);
+        setIsGuest(guestFlag === "true" || !email || email === "guest");
       };
       fetchUserData();
     }, []),
@@ -47,6 +50,7 @@ export default function ProfileScreen() {
       await auth.signOut();
       await AsyncStorage.removeItem("userEmail");
       await AsyncStorage.removeItem("userName");
+      await AsyncStorage.setItem("isguest", "true");
       router.push("/Signin");
       Alert.alert("Logged Out", "You have been logged out successfully.");
     } catch (error) {
@@ -54,7 +58,7 @@ export default function ProfileScreen() {
     }
   };
 
-  const isLoggedIn = !!userEmail;
+  const isLoggedIn = !isGuest;
 
   return (
     <SafeAreaView className="flex-1 bg-[#d1bea7]">
@@ -192,7 +196,9 @@ export default function ProfileScreen() {
                 icon="receipt-outline"
                 label="My Bookings"
                 color="#8b5cf6"
+                onPress={() => router.navigate("/(tabs)/History")}
               />
+
               <View className="h-px bg-slate-50 mx-4" />
               <MenuItem
                 icon="help-circle-outline"
@@ -257,8 +263,8 @@ export default function ProfileScreen() {
         </View>
 
         {/* ── App Version ───────────────────────────────────── */}
-        <Text className="text-center text-slate-400 text-xs mt-8">
-          Dine Time v1.0.0
+        <Text className="text-center text-slate-500 text-sm mt-8">
+          Dine Time v1.5.0
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -270,15 +276,18 @@ function MenuItem({
   icon,
   label,
   color,
+  onPress,
 }: {
   icon: any;
   label: string;
   color: string;
+  onPress?: () => void;
 }) {
   return (
     <TouchableOpacity
       activeOpacity={0.7}
       className="flex-row items-center px-4 py-3.5"
+      onPress={onPress}
     >
       <View
         className="w-9 h-9 rounded-xl items-center justify-center mr-3"
