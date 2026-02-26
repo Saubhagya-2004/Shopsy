@@ -184,12 +184,14 @@ export default function ProfileScreen() {
                 icon="person-outline"
                 label="Edit Profile"
                 color="#3b82f6"
+                onPress={() => router.push("/profile/EditProfile")}
               />
               <View className="h-px bg-slate-50 mx-4" />
               <MenuItem
                 icon="notifications-outline"
                 label="Notifications"
                 color="#f59e0b"
+                onPress={() => router.push("/profile/Notifications")}
               />
               <View className="h-px bg-slate-50 mx-4" />
               <MenuItem
@@ -204,6 +206,7 @@ export default function ProfileScreen() {
                 icon="help-circle-outline"
                 label="Help & Support"
                 color="#10b981"
+                onPress={() => router.push("/profile/Support")}
               />
             </View>
           </View>
