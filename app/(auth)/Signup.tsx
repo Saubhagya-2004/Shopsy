@@ -25,6 +25,17 @@ export default function Signup() {
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const auth = getAuth();
   const db = getFirestore();
+  const handleGuestFromSignup = async () => {
+    // If a user is already signed in with email, sign them out first
+    if (auth.currentUser) {
+      await auth.signOut();
+      console.log("Previous user signed out before guest login");
+    }
+    await AsyncStorage.removeItem("userName");
+    await AsyncStorage.setItem("isguest", "true");
+    await AsyncStorage.setItem("userEmail", "guest");
+    router.replace("/Home");
+  };
   const handleSubmitForm = async (values: any) => {
     try {
       const usercredential = await createUserWithEmailAndPassword(
@@ -41,6 +52,7 @@ export default function Signup() {
       });
       await AsyncStorage.setItem("userEmail", values.email);
       await AsyncStorage.setItem("userName", values.userName);
+      await AsyncStorage.setItem("isguest", "false");
       router.push("/Home");
       console.log(user, AsyncStorage.getItem("userEmail"));
     } catch (error: any) {
@@ -121,8 +133,8 @@ export default function Signup() {
                     </Text>
                     <TextInput
                       className={`border border-slate-800 rounded-3xl px-4 py-3 hover:ring-2 ${focusedInput === "email"
-                          ? "border-cyan-400 border"
-                          : "border-slate-800"
+                        ? "border-cyan-400 border"
+                        : "border-slate-800"
                         }`}
                       keyboardType="email-address"
                       autoCapitalize="none"
@@ -143,8 +155,8 @@ export default function Signup() {
                     </Text>
                     <TextInput
                       className={`border border-slate-800 rounded-3xl px-4 py-3 hover:ring-2 ${focusedInput === "password"
-                          ? "border-cyan-400 border"
-                          : "border-slate-800"
+                        ? "border-cyan-400 border"
+                        : "border-slate-800"
                         }`}
                       secureTextEntry={true}
                       autoCapitalize="none"
@@ -166,8 +178,8 @@ export default function Signup() {
                     </Text>
                     <TextInput
                       className={`border border-slate-800 rounded-3xl px-4 py-3 hover:ring-2 ${focusedInput === "userName"
-                          ? "border-cyan-400 border"
-                          : "border-slate-800"
+                        ? "border-cyan-400 border"
+                        : "border-slate-800"
                         }`}
                       underlineColorAndroid="transparent"
                       keyboardType="default"
@@ -213,7 +225,7 @@ export default function Signup() {
             </Text>
             <TouchableOpacity
               className="py-2 mb-3 mt-1 border border-green-600 rounded-2xl"
-              onPress={() => router.replace("/Home")}
+              onPress={handleGuestFromSignup}
               activeOpacity={0.8}
             >
               <Text className="text-green-600 text-center text-lg font-semibold">

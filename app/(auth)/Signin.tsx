@@ -46,6 +46,7 @@ export default function Signup() {
         const userData = userDoc.data();
         console.log("user data", userData)
         await AsyncStorage.setItem("userEmail", values.email);
+        await AsyncStorage.setItem("isguest", "false");
         if (userData?.userName) {
           await AsyncStorage.setItem("userName", userData.userName);
         }

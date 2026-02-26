@@ -1,4 +1,7 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ResizeMode, Video } from "expo-av";
 import { useRouter } from "expo-router";
+import { getAuth } from "firebase/auth";
 import React from "react";
 import {
   Image,
@@ -8,15 +11,22 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Video, ResizeMode } from "expo-av";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { app } from "../config/firebaseconfig";
 const logo = require("../assets/images/dine-time.png");
 const btnimg = require("../assets/images/buttom.png");
 export default function index() {
   const router = useRouter();
-  const handleguest = async()=>{
+  const auth = getAuth(app);
+  const handleguest = async () => {
+    // If a user is already signed in with email, sign them out first
+    if (auth.currentUser) {
+      await auth.signOut();
+      console.log("Previous user signed out before guest login");
+    }
+    await AsyncStorage.removeItem("userName");
     await AsyncStorage.setItem("isguest", "true");
+    await AsyncStorage.setItem("userEmail", "guest");
     router.push("/Home");
     console.log("welcome guest")
   }

@@ -29,11 +29,11 @@ export default function ProfileScreen() {
         setUserName(name);
       };
       fetchUserData();
-    }, [])
+    }, []),
   );
 
   const getInitials = () => {
-    if (!userName) return "?";
+    if (!userName) return "G";
     return userName
       .split(" ")
       .map((w) => w[0])
@@ -121,12 +121,29 @@ export default function ProfileScreen() {
                 <View className="h-px w-full bg-slate-100 my-5" />
 
                 {/* Member Since Badge */}
-                <View className="bg-slate-50 rounded-xl px-4 py-2.5 flex-row items-center gap-2">
-                  <Ionicons name="shield-checkmark" size={16} color="#22c55e" />
-                  <Text className="text-slate-600 text-xs font-medium">
-                    Verified Member
-                  </Text>
-                </View>
+                {userEmail === "guest" ? (
+                  <View className="bg-slate-50 rounded-xl px-4 py-2.5 flex-row items-center gap-2">
+                    <Ionicons
+                      name="shield-checkmark"
+                      size={16}
+                      color="#22c55e"
+                    />
+                    <Text className="text-slate-600 text-xs font-medium">
+                      Guest User
+                    </Text>
+                  </View>
+                ) : (
+                  <View className="bg-slate-50 rounded-xl px-4 py-2.5 flex-row items-center gap-2">
+                    <Ionicons
+                      name="shield-checkmark"
+                      size={16}
+                      color="#22c55e"
+                    />
+                    <Text className="text-slate-600 text-xs font-medium">
+                      Verified Member
+                    </Text>
+                  </View>
+                )}
               </>
             ) : (
               <>
@@ -230,11 +247,7 @@ export default function ProfileScreen() {
                 className="bg-white py-4 rounded-2xl border-2 border-slate-200 flex-row items-center justify-center gap-2"
                 style={{ elevation: 2 }}
               >
-                <Ionicons
-                  name="person-add-outline"
-                  size={20}
-                  color="#1e293b"
-                />
+                <Ionicons name="person-add-outline" size={20} color="#1e293b" />
                 <Text className="text-slate-800 text-base font-bold">
                   Create Account
                 </Text>
